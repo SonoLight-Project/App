@@ -1,8 +1,10 @@
 <script lang="ts" setup>
     import { useOAuthStore } from "~/stores/oauth"
+    import { useAccountStore } from "~/stores/account";
     
     const $route = useRoute()
     const oauthStore = useOAuthStore()
+    const accountStore = useAccountStore()
     const isLoading = ref(false)
     const error = ref<string | null>(null)
     
@@ -27,7 +29,7 @@
         isLoading.value = true
         
         try {
-            const response = await $fetch(`/api/oauth/${ platform }`, {
+            const res = await $fetch(`/api/oauth/${ platform }`, {
                 method: "POST",
                 body: {
                     code,
@@ -37,6 +39,9 @@
             })
             
             if (oauthStore.action === "login") {
+                const _u = (res as { user: { id: string, username: string } }).user
+                accountStore.setUser(_u["id"], _u["username"]);
+                
                 return navigateTo("/dashboard")
             } else {
                 return navigateTo("/account/settings")
@@ -51,7 +56,7 @@
 </script>
 
 <template>
-    <main class="w-full h-21/24 flex flex-col justify-center items-center gap-2">
+    <main class="w-full h-full flex flex-col justify-center items-center gap-2">
         <div class="card bg-base-100 shadow-sm w-1/3 py-2">
             <h2 class="text-xl mx-auto">声致发光平台 · {{ mapper[$route.params.platform as string] }} 授权</h2>
         </div>
@@ -73,7 +78,8 @@
             </div>
             
             <div v-if="error" class="w-full flex gap-2">
-                <button class="btn btn-primary w-[calc(75%-4px)]" @click="$router.push('/account/oauth')">重试授权</button>
+                <button class="btn btn-primary w-[calc(75%-4px)]" @click="$router.push('/account/oauth')">重试授权
+                </button>
                 <button class="btn btn-primary w-[calc(25%-4px)]" @click="$router.push('/account/login')">返回</button>
             </div>
         </div>

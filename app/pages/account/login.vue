@@ -1,6 +1,9 @@
 <script lang="ts" setup>
     import { ref } from "vue";
     import { EventBus } from "~/modules/Eventbus";
+    import { useAccountStore } from "~/stores/account";
+    
+    const accountStore = useAccountStore();
     
     const email = ref("");
     const password = ref("");
@@ -17,6 +20,9 @@
                     password: password.value,
                 },
             });
+            
+            const _u = res.user as { id: string, username: string }
+            accountStore.setUser(_u["id"], _u["username"]);
             
             // 跳转到面板
             await navigateTo("/dashboard");
@@ -38,7 +44,7 @@
 </script>
 
 <template>
-    <main class="w-full h-21/24 flex flex-col justify-center items-center gap-2">
+    <main class="w-full h-full flex flex-col justify-center items-center gap-2">
         <div class="card bg-base-100 shadow-sm w-1/3 py-2">
             <h2 class="text-xl mx-auto">声致发光平台 · 登录</h2>
         </div>

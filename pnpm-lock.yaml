@@ -23,6 +23,9 @@ importers:
       nuxt:
         specifier: ^4.0.0
         version: 4.0.0(@netlify/blobs@9.1.2)(@parcel/watcher@2.5.1)(@types/node@24.0.14)(@vue/compiler-sfc@3.5.17)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.45.1)(sass-embedded@1.89.2)(terser@5.43.1)(typescript@5.8.3)(vite@7.0.5(@types/node@24.0.14)(jiti@2.4.2)(lightningcss@1.30.1)(sass-embedded@1.89.2)(terser@5.43.1)(yaml@2.8.0))(yaml@2.8.0)
+      pinia-plugin-persistedstate:
+        specifier: ^4.4.1
+        version: 4.4.1(@nuxt/kit@4.0.0(magicast@0.3.5))(@pinia/nuxt@0.11.2(magicast@0.3.5)(pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3))))(pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3)))
       prisma:
         specifier: ^6.12.0
         version: 6.12.0(typescript@5.8.3)
@@ -33,6 +36,9 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1(vue@3.5.17(typescript@5.8.3))
     devDependencies:
+      '@iconify-json/ic':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@nuxt/icon':
         specifier: ^1.15.0
         version: 1.15.0(magicast@0.3.5)(vite@7.0.5(@types/node@24.0.14)(jiti@2.4.2)(lightningcss@1.30.1)(sass-embedded@1.89.2)(terser@5.43.1)(yaml@2.8.0))(vue@3.5.17(typescript@5.8.3))
@@ -526,6 +532,9 @@ packages:
 
   '@fastify/busboy@3.1.1':
     resolution: {integrity: sha512-5DGmA8FTdB2XbDeEwc/5ZXBl6UbBAyBOOLlPuBnZ/N1SwdH9Ii+cOX3tBROlDgcTXxjOYnLMVoKk9+FXAw0CJw==}
+
+  '@iconify-json/ic@1.2.2':
+    resolution: {integrity: sha512-QmjwS3lYiOmVWgTCEOTFyGODaR/+689+ajep/VsrCcsUN0Gdle5PmIcibDsdmRyrOsW/E77G41UUijdbjQUofw==}
 
   '@iconify/collections@1.0.569':
     resolution: {integrity: sha512-PclOVcAlvv55Fv5kRJmxk/KMoFLNBMLh0q9LDMlonIPJMUu958VsNw7F7CVurfyEbCf/54i7eF+q6LHqJxeQvg==}
@@ -1944,6 +1953,9 @@ packages:
   decache@4.6.2:
     resolution: {integrity: sha512-2LPqkLeu8XWHU8qNCS3kcF6sCcb5zIzvWaAHYSvPfwhdd7mHuah29NssMzrTYyHN4F5oFy2ko9OBYxegtU0FEw==}
 
+  deep-pick-omit@1.2.1:
+    resolution: {integrity: sha512-2J6Kc/m3irCeqVG42T+SaUMesaK7oGWaedGnQQK/+O0gYc+2SP5bKh/KKTE7d7SJ+GCA9UUE1GRzh6oDe0EnGw==}
+
   deepmerge@4.3.1:
     resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
     engines: {node: '>=0.10.0'}
@@ -3131,6 +3143,20 @@ packages:
   picomatch@4.0.3:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
+
+  pinia-plugin-persistedstate@4.4.1:
+    resolution: {integrity: sha512-lmuMPpXla2zJKjxEq34e1E9P9jxkWEhcVwwioCCE0izG45kkTOvQfCzvwhW3i38cvnaWC7T1eRdkd15Re59ldw==}
+    peerDependencies:
+      '@nuxt/kit': '>=3.0.0'
+      '@pinia/nuxt': '>=0.10.0'
+      pinia: '>=3.0.0'
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+      '@pinia/nuxt':
+        optional: true
+      pinia:
+        optional: true
 
   pinia@3.0.3:
     resolution: {integrity: sha512-ttXO/InUULUXkMHpTdp9Fj4hLpD/2AoJdmAbAeW2yu1iy1k+pkFekQXw5VpC0/5p51IOR/jDaDRfRWRnMMsGOA==}
@@ -4657,6 +4683,10 @@ snapshots:
     optional: true
 
   '@fastify/busboy@3.1.1': {}
+
+  '@iconify-json/ic@1.2.2':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify/collections@1.0.569':
     dependencies:
@@ -6242,6 +6272,8 @@ snapshots:
     dependencies:
       callsite: 1.0.0
 
+  deep-pick-omit@1.2.1: {}
+
   deepmerge@4.3.1: {}
 
   default-browser-id@5.0.0: {}
@@ -7615,6 +7647,16 @@ snapshots:
   picomatch@2.3.1: {}
 
   picomatch@4.0.3: {}
+
+  pinia-plugin-persistedstate@4.4.1(@nuxt/kit@4.0.0(magicast@0.3.5))(@pinia/nuxt@0.11.2(magicast@0.3.5)(pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3))))(pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3))):
+    dependencies:
+      deep-pick-omit: 1.2.1
+      defu: 6.1.4
+      destr: 2.0.5
+    optionalDependencies:
+      '@nuxt/kit': 4.0.0(magicast@0.3.5)
+      '@pinia/nuxt': 0.11.2(magicast@0.3.5)(pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3)))
+      pinia: 3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3))
 
   pinia@3.0.3(typescript@5.8.3)(vue@3.5.17(typescript@5.8.3)):
     dependencies:

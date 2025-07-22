@@ -9,17 +9,12 @@ export default defineNuxtConfig({
         layoutTransition: { name: "layout", mode: "out-in" },
     },
 
-    modules: ["@nuxt/icon", "@pinia/nuxt"],
-    css: ["~/assets/main.css"],
-
-    // icon: {
-    //     customCollections: [
-    //         {
-    //             prefix: "sonoicon",
-    //             dir: "./app/icons"
-    //         }
-    //     ]
+    // experimental: {
+    //     viewTransition: true
     // },
+
+    modules: ["@nuxt/icon", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt"],
+    css: ["~/assets/main.css"],
 
     vite: {
         plugins: [tailwindcss()],

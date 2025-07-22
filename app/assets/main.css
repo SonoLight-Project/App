@@ -3,26 +3,61 @@
 /*    src: url("/static/SmileySans-Oblique.woff2") format("woff");*/
 /*}*/
 
-*:not(.allow-select) {
-    user-select: none;
-}
+@layer base {
+    *:not(.allow-select) {
+        user-select: none;
+    }
 
-body {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-}
+    body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
 
-*:not(.no-transition) {
-    transition: all 0.25s ease-in-out;
+    *:not(.no-transition) {
+        transition: all 0.25s ease-in-out;
+    }
+
+    ::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 @import "tailwindcss";
 
+@layer components {
+    .avatar-busy:before {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        display: block;
+        border-radius: calc(infinity * 1px);
+        background-color: var(--color-error);
+        outline: 2px solid var(--color-base-100);
+        width: 15%;
+        height: 15%;
+        top: 7%;
+        right: 7%;
+    }
+
+    .avatar-invisible::before {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        display: block;
+        border-radius: calc(infinity * 1px);
+        background-color: var(--color-warning);
+        outline: 2px solid var(--color-base-100);
+        width: 15%;
+        height: 15%;
+        top: 7%;
+        right: 7%;
+    }
+}
+
 @plugin "daisyui" {
-    exclude: rootscrollgutter;
+    exclude: rootscrollgutter, scrollbar;
 }
 
 @plugin "daisyui/theme" {
