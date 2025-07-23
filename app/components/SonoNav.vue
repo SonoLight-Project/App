@@ -23,8 +23,8 @@
     const handleLogout = async () => {
         try {
             await $fetch("/api/auth/logout", { method: "POST" });
-            accountStore.$reset();
-            router.push("/");
+            accountStore.clearUser();
+            await router.push("/");
         } catch (error: any) {
             EventBus.emit("toast:create", {
                 alertType: "error",
@@ -35,54 +35,6 @@
 </script>
 
 <template>
-    <!-- <header class="w-full h-2/24 px-16 flex justify-between items-center">
-        <section>
-            <a class="text-secondary text-lg" @click="$router.push(`/`)"> 声致发光 </a>
-        </section>
-        <section class="flex justify-center items-center gap-12">
-            <a @click="$router.push(`/`)">
-                主页</span>
-            </a>
-            <a @click="$router.push(`/account/login`)">
-                面板</span>
-            </a>
-            <a @click="$router.push(`/blog`)">
-                博客</span>
-            </a>
-            <a @click="$router.push(`/more/contact-us`)">
-                联系我们</span>
-            </a>
-        </section>
-        <section>
-            <a v-if="!logged_in" @click="$router.push(`/account/login`)">
-                
-                    登录面板
-                    <span aria-hidden="true">&rarr;</span>
-                </span>
-            </a>
-            <div v-else class="dropdown dropdown-end">
-                <div class="m-1 avatar avatar-online avatar-placeholder cursor-pointer" role="button" tabindex="0">
-                    <div class="bg-neutral text-neutral-content w-10 rounded-full">
-                        <span class="-translate-x-[0.5px]">{{ avatarName }}</span>
-                    </div>
-                </div>
-                <ul class="dropdown-content menu bg-base-100 rounded-sm z-1 w-32 p-2 shadow-sm" tabindex="0">
-                    <li>
-                        <a>
-                            <Icon name="ic:round-admin-panel-settings" size="20"/>
-                            账户设置
-                        </a>
-                    </li>
-                    <li>
-                        <a @click="handleLogout">
-                            <Icon name="ic:round-logout" size="20"/>
-                            登出
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </section>
-    </header> -->
     <div class="fixed top-0 bg-transparent border-b border-base-100 backdrop-blur-lg z-10 navbar p-0 px-4 w-full">
         <section class="navbar-start">
             <div class="flex-none lg:hidden">
@@ -95,30 +47,47 @@
         <section class="hidden lg:inline-flex navbar-center">
             <ul class="menu menu-horizontal gap-2">
                 <li><a @click="$router.push(`/`)">
-                    <Icon name="ic:round-home" size="18" class="-translate-y-0.25" />
+                    <Icon class="-translate-y-0.25" name="ic:round-home" size="18"/>
                     主页
                 </a></li>
                 <li><a @click="$router.push(`/dashboard`)">
-                    <Icon name="ic:round-dashboard" size="18" class="-translate-y-0.25" />
+                    <Icon class="-translate-y-0.25" name="ic:round-dashboard" size="18"/>
                     面板
                 </a></li>
                 <li><a @click="$router.push(`/blog`)">
-                    <Icon name="ic:round-event-note" size="18" class="-translate-y-0.25" />
+                    <Icon class="-translate-y-0.25" name="ic:round-event-note" size="18"/>
                     博客
                 </a></li>
                 <li><a @click="$router.push(`/more/contact-us`)">
-                    <Icon name="ic:round-contact-support" size="18" class="-translate-y-0.25" />
+                    <Icon class="-translate-y-0.25" name="ic:round-contact-support" size="18"/>
                     联系我们
                 </a></li>
             </ul>
         </section>
         <section class="navbar-end">
-            <ul class="menu menu-horizontal">
+            <ul v-if="!logged_in" class="menu menu-horizontal">
                 <li><a @click="$router.push(`/account/login`)">
-                    <Icon name="ic:round-login" size="18" class="-translate-y-0.25" />
+                    <Icon class="-translate-y-0.25" name="ic:round-login" size="18"/>
                     登录
                 </a></li>
             </ul>
+            <div v-else class="dropdown dropdown-end">
+                <div class="m-1 avatar avatar-online avatar-placeholder cursor-pointer" role="button" tabindex="0">
+                    <div class="bg-neutral text-neutral-content w-10 rounded-full">
+                        <span class="-translate-x-[0.5px]">{{ avatarName }}</span>
+                    </div>
+                </div>
+                <ul class="dropdown-content menu bg-base-100 rounded-sm z-1 w-32 p-2 shadow-sm" tabindex="0">
+                    <li><a @click="$router.push('/settings/account')">
+                        <Icon name="ic:round-admin-panel-settings" size="20"/>
+                        账户设置
+                    </a></li>
+                    <li><a @click="handleLogout">
+                        <Icon name="ic:round-logout" size="20"/>
+                        登出
+                    </a></li>
+                </ul>
+            </div>
         </section>
     </div>
     <div class="drawer-side">
@@ -126,19 +95,19 @@
         <ul class="menu bg-base-200 min-h-full w-80 p-4">
             <!-- Sidebar content here -->
             <li><a @click="$router.push(`/`)">
-                <Icon name="ic:round-home" size="18" class="-translate-y-0.25" />
+                <Icon class="-translate-y-0.25" name="ic:round-home" size="18"/>
                 主页
             </a></li>
             <li><a @click="$router.push(`/dashboard`)">
-                <Icon name="ic:round-dashboard" size="18" class="-translate-y-0.25" />
+                <Icon class="-translate-y-0.25" name="ic:round-dashboard" size="18"/>
                 面板
             </a></li>
             <li><a @click="$router.push(`/blog`)">
-                <Icon name="ic:round-event-note" size="18" class="-translate-y-0.25" />
+                <Icon class="-translate-y-0.25" name="ic:round-event-note" size="18"/>
                 博客
             </a></li>
             <li><a @click="$router.push(`/more/contact-us`)">
-                <Icon name="ic:round-contact-support" size="18" class="-translate-y-0.25" />
+                <Icon class="-translate-y-0.25" name="ic:round-contact-support" size="18"/>
                 联系我们
             </a></li>
         </ul>

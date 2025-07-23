@@ -2,7 +2,7 @@
 </script>
 
 <template>
-    <main class="w-full h-full flex flex-col justify-center items-center p-4 md:p-8 lg:p-12 min-h-screen">
+    <main class="w-full h-full flex flex-col justify-center items-center p-4 md:p-8 lg:p-12">
         <!-- 标题区域 -->
         <div class="text-center mt-16 mb-10 md:mb-16 animate-fade-in">
             <h1 class="text-secondary text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">多元化 Minecraft 赛博资产存储库</h1>
@@ -39,13 +39,13 @@
 
         <!-- 行动按钮区域 -->
         <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-            <button class="btn btn-secondary btn-lg py-6 text-base md:text-lg flex-1">
+            <button class="btn btn-secondary btn-lg py-6 text-base md:text-lg flex-1" @click="$router.push('/dashboard')">
                 <span class="flex items-center justify-center gap-2 scale-125 md:scale-100">
                     <Icon class="transition-transform" name="ic:round-play-arrow" size="24" />
                     开始使用
                 </span>
             </button>
-            <button class="btn btn-secondary btn-outline btn-lg py-6 text-base md:text-lg flex-1">
+            <button class="btn btn-secondary btn-outline btn-lg py-6 text-base md:text-lg flex-1" @click="$router.push('/company/about-us')">
                 <span class="flex items-center justify-center gap-2 scale-125 md:scale-100">
                     了解更多
                     <Icon class="transition-transform" name="ic:round-more-horiz" size="24" />

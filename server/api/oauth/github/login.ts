@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     // 查找GitHub ID匹配的用户
     const user = await prisma.user.findUnique({
         where: { githubId: id.toString() },
-        select: { id: true, username: true, email: true },
+        select: { id: true, username: true, discordUsername: true, githubUsername: true },
     });
 
     if (!user) {
@@ -82,8 +82,8 @@ export default defineEventHandler(async (event) => {
         user: {
             id: user.id,
             username: user.username,
-            email: user.email,
-            githubUsername: login
+            discordUsername: user.discordUsername,
+            githubUsername: user.githubUsername,
         }
     };
 });

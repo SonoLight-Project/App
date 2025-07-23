@@ -61,6 +61,8 @@ export default defineEventHandler(async (event) => {
         user: {
             id: user.id,
             username: user.username,
+            discordUsername: user.discordUsername,
+            githubUsername: user.githubUsername,
         }
     }
 })

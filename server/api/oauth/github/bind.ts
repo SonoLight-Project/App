@@ -56,5 +56,15 @@ export default defineEventHandler(async (event) => {
         },
     });
 
-    return { message: "绑定成功" };
+    const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            username: true,
+            discordUsername: true,
+            githubUsername: true
+        }
+    });
+
+    return { message: "绑定成功", user: updatedUser };
 });

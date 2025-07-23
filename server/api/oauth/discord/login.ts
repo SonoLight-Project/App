@@ -31,18 +31,18 @@ export default defineEventHandler(async (event) => {
             case 400:
                 throw createError({ statusCode: 400, message: "授权无效：登录已过期，请重试" });
             default:
-                throw createError({ statusCode: 500, message: "授权失败：发生意外错误，请联系管理员" });
+                throw createError({ statusCode: 500, message: "授权失败：发生意外错误，请联系管理" });
         }
     }
 
     const { access_token } = tokenResponse as { access_token: string };
 
     // 获取用户信息
-    let userInfo
+    let userInfo;
     try {
         userInfo = await $fetch("https://discord.com/api/users/@me", {
             headers: {
-                Authorization: `Bearer ${ access_token }`,
+                Authorization: `Bearer ${access_token}`,
             },
         });
     } catch (error: any) {
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
             case 401:
                 throw createError({ statusCode: 400, message: "授权无效：登录已过期或无效，请尝试重新登录" });
             default:
-                throw createError({ statusCode: 500, message: "授权无效：获取用户信息时发生意外错误，请联系管理员" })
+                throw createError({ statusCode: 500, message: "授权无效：获取用户信息时发生意外错误，请联系管理员" });
         }
     }
 
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     // 查找Discord ID匹配的用户
     const user = await prisma.user.findUnique({
         where: { discordId: id },
-        select: { id: true, username: true, email: true, discordUsername: true },
+        select: { id: true, username: true, discordUsername: true, githubUsername: true },
     });
 
     if (!user) {
@@ -104,8 +104,8 @@ export default defineEventHandler(async (event) => {
         user: {
             id: user.id,
             username: user.username,
-            email: user.email,
-            discordUsername: username,
+            discordUsername: user.discordUsername,
+            githubUsername: user.githubUsername,
         },
     };
 });
