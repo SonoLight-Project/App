@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     //     viewTransition: true
     // },
 
-    modules: ["@nuxt/icon", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt"],
+    modules: ["@nuxt/icon", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt", "@nuxt/content"],
     css: ["~/assets/main.css"],
 
     // icon: {

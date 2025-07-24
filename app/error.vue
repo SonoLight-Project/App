@@ -28,20 +28,19 @@
 
 <template>
     <div class="w-screen h-screen p-0">
-        <div id="layout-default" class="w-full h-full">
-            <div class="w-full h-full">
-                <!-- Content HERE -->
-                <SonoNav/>
-                <main class="w-full h-full pb-12 flex flex-col justify-center items-center">
-                    <h1 class="text-secondary text-4xl md:text-5xl lg:text-6xl">{{ errorTitle[errorCode] }}</h1>
-                    <br/>
-                    <p class="text-secondary text-lg md:text-xl lg:text-2xl">{{ errorDescription[errorCode] }}</p>
-                    <br/>
-                    <button class="btn btn-md md:btn-lg btn-secondary" @click="$router.push(`/`)">返回主页</button>
-                </main>
-                <SonoFooter/>
-            </div>
-        </div>
+        <section class="w-full h-full bg-primary/50 backdrop-blur-xs">
+            <!-- Content HERE -->
+            <SonoNav/>
+            <main class="w-full h-full pb-12 flex flex-col justify-center items-center">
+                <h1 class="text-secondary text-4xl md:text-5xl lg:text-6xl">{{ errorTitle[errorCode] }}</h1>
+                <br/>
+                <p class="text-secondary text-lg md:text-xl lg:text-2xl">{{ errorDescription[errorCode] }}</p>
+                <br/>
+                <button class="btn btn-md md:btn-lg btn-secondary" @click="$router.push(`/`)">返回主页</button>
+            </main>
+            <SonoFooter/>
+        </section>
+        <div id="layout-default" class="w-screen h-screen fixed top-0 left-0 -z-999"></div>
     </div>
 </template>
 
@@ -62,13 +61,13 @@
     }
     
     div#layout-default {
-        background-image: linear-gradient(
-                        to right,
-                        color-mix(in oklab, var(--color-primary), transparent 25%),
-                        color-mix(in oklab, var(--color-primary), transparent 25%)
-        ),
-        url("/static/Images/BgItems.webp"), linear-gradient(to right, var(--color-primary), var(--color-primary));
+        background-image: url("/static/Images/BgItems.webp"), linear-gradient(to right, var(--color-primary), var(--color-primary));
         background-size: cover;
-        background-position: center; background-position-y: -15%; @media (max-width: 768px) { background-position-y: 0; }
+        background-position: center;
+        background-position-y: -15%;
+        
+        @media (max-width: 768px) {
+            background-position-y: 0;
+        }
     }
 </style>
