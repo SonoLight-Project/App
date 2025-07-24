@@ -4,7 +4,7 @@
 <template>
     <div class="w-screen p-0">
         <SonoNav/>
-        <div id="layout-default" class="w-full h-full">
+        <div id="layout-default" class="w-full h-full pt-16">
             <div class="w-full h-full">
                 <!-- Content HERE -->
                 <NuxtPage class="min-h-screen"/>

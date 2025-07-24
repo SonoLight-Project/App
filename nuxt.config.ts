@@ -18,5 +18,13 @@ export default defineNuxtConfig({
 
     vite: {
         plugins: [tailwindcss()],
+        define: {
+            global: {},
+        },
+        resolve: {
+            alias: {
+                buffer: 'buffer/',
+            },
+        },
     },
 });
