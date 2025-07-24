@@ -2,6 +2,7 @@
     import { ref } from "vue";
     import { EventBus } from "~/modules/Eventbus";
     import { useAccountStore } from "~/stores/account";
+    import type { IApiUserResponse } from "~/types/api/LoginType";
     
     const accountStore = useAccountStore();
     
@@ -21,8 +22,8 @@
                 },
             });
             
-            const _u = res.user as { id: string, username: string, discordUsername: string, githubUsername: string }
-            accountStore.setUser(_u["id"], _u["username"], _u["discordUsername"], _u["githubUsername"]);
+            const _u = res.user as IApiUserResponse
+            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
             
             // 跳转到面板
             await navigateTo("/dashboard");

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-    import * as Std from "~/modules/staticData";
+    import * as Std from "~/modules/publicData";
 
     const oauthStore = useOAuthStore();
 

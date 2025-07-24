@@ -29,9 +29,17 @@ export default defineEventHandler(async (event) => {
     } catch (error: any) {
         switch (error.statusCode) {
             case 400:
-                throw createError({ statusCode: 400, message: "授权无效：登录已过期，请重试" });
+                throw createError({
+                    statusCode: 400,
+                    message: "授权无效：登录已过期，请重试",
+                    data: { errorCode: "DC_OAUTH_LOGIN:TOKEN_EXPIRED" },
+                });
             default:
-                throw createError({ statusCode: 500, message: "授权失败：发生意外错误，请联系管理" });
+                throw createError({
+                    statusCode: 500,
+                    message: "授权失败：发生意外错误，请联系管理",
+                    data: { errorCode: "DC_OAUTH_LOGIN:UNEXCEPTED_ERROR", errorDetails: error.message },
+                });
         }
     }
 
@@ -42,15 +50,23 @@ export default defineEventHandler(async (event) => {
     try {
         userInfo = await $fetch("https://discord.com/api/users/@me", {
             headers: {
-                Authorization: `Bearer ${access_token}`,
+                Authorization: `Bearer ${ access_token }`,
             },
         });
     } catch (error: any) {
         switch (error.statusCode) {
             case 401:
-                throw createError({ statusCode: 400, message: "授权无效：登录已过期或无效，请尝试重新登录" });
+                throw createError({
+                    statusCode: 400,
+                    message: "授权无效：登录已过期或无效，请尝试重新登录",
+                    data: { errorCode: "DC_OAUTH_LOGIN:TOKEN_EXPIRED" },
+                });
             default:
-                throw createError({ statusCode: 500, message: "授权无效：获取用户信息时发生意外错误，请联系管理员" });
+                throw createError({
+                    statusCode: 500,
+                    message: "授权无效：获取用户信息时发生意外错误，请联系管理员",
+                    data: { errorCode: "DC_OAUTH_LOGIN:UNEXCEPTED_ERROR", errorDetails: error.message },
+                });
         }
     }
 
@@ -63,19 +79,15 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!user) {
-        throw createError({ statusCode: 401, message: "未找到关联账户" });
+        throw createError({
+            statusCode: 401,
+            message: "未找到关联账户",
+            data: { errorCode: "DC_OAUTH_LOGIN:NO_ASSOCIATED_ACCOUNT" },
+        });
     }
 
     // 生成JWT token
-    const accessToken = jwt.sign(
-        {
-            id: user.id,
-            email: user.email,
-            discordUsername: user.discordUsername,
-        },
-        process.env.JWT_SECRET!,
-        { expiresIn: "15m" }
-    );
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "15m" });
 
     // 生成refresh token
     const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
@@ -104,6 +116,7 @@ export default defineEventHandler(async (event) => {
         user: {
             id: user.id,
             username: user.username,
+            role: user.role,
             discordUsername: user.discordUsername,
             githubUsername: user.githubUsername,
         },

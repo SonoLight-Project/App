@@ -9,14 +9,21 @@ datasource db {
 }
 
 model User {
+    // Intenal Data
+    createdAt       DateTime @default(now())
+    // Basic
     id              Int      @id @default(autoincrement())
     username        String
     email           String   @unique
+    // Permission
+    role            Int      @default(0)
+    // Credential
     passwordHash    String
-    createdAt       DateTime @default(now())
-    refreshToken    String? // JWT
-    discordId       String?  @unique // Discord ID (OAuth)
-    discordUsername String? // Discord Username (OAuth)
-    githubId        String?  @unique // GitHub ID (OAuth)
-    githubUsername  String? // GitHub Username (OAuth)
+    refreshToken    String?
+    // Discord OAuth
+    discordId       String?  @unique
+    discordUsername String?
+    // GitHub OAuth
+    githubId        String?  @unique
+    githubUsername  String?
 }

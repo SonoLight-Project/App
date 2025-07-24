@@ -5,7 +5,11 @@ export default defineEventHandler(async (event) => {
     const { code } = await readBody(event);
 
     if (!code) {
-        throw createError({ statusCode: 400, message: "缺少授权码" });
+        throw createError({
+            statusCode: 400,
+            message: "缺少授权码",
+            data: { errorCode: "GH_OAUTH_BIND:MISSING_AUTH_CODE" },
+        });
     }
 
     // 交换code获取access token
@@ -22,12 +26,12 @@ export default defineEventHandler(async (event) => {
         },
     });
 
-    const { access_token } = tokenResponse as { access_token: string } ?? {};
+    const { access_token } = (tokenResponse as { access_token: string }) ?? {};
 
     // 获取用户信息
     const userInfo = await $fetch("https://api.github.com/user", {
         headers: {
-            Authorization: `token ${access_token}`,
+            Authorization: `token ${ access_token }`,
         },
     });
 
@@ -35,7 +39,11 @@ export default defineEventHandler(async (event) => {
 
     const userId = event.context.auth?.user?.id;
     if (!userId) {
-        throw createError({ statusCode: 401, message: "需要先登录" });
+        throw createError({
+            statusCode: 401,
+            message: "需要先登录",
+            data: { errorCode: "GH_OAUTH_BIND:USER_NOT_LOGGED_IN" }
+        });
     }
 
     // 检查是否已被绑定
@@ -44,7 +52,11 @@ export default defineEventHandler(async (event) => {
     });
 
     if (existing) {
-        throw createError({ statusCode: 409, message: "该 GitHub 账户已被其他用户绑定" });
+        throw createError({
+            statusCode: 409,
+            message: "该 GitHub 账户已被其他用户绑定",
+            data: { errorCode: "GH_OAUTH_BIND:GITHUB_ACCOUNT_ALREADY_BOUND" },
+        });
     }
 
     // 绑定GitHub账户
@@ -61,9 +73,10 @@ export default defineEventHandler(async (event) => {
         select: {
             id: true,
             username: true,
+            role: true,
             discordUsername: true,
-            githubUsername: true
-        }
+            githubUsername: true,
+        },
     });
 
     return { message: "绑定成功", user: updatedUser };

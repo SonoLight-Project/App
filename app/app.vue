@@ -12,6 +12,7 @@
         </div>
         <SonoFooter/>
     </div>
+    
     <SonoToast/>
 </template>
 

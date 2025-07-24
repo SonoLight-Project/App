@@ -33,11 +33,11 @@
                 <!-- Content HERE -->
                 <SonoNav/>
                 <main class="w-full h-full pb-12 flex flex-col justify-center items-center">
-                    <h1 class="text-secondary text-6xl">{{ errorTitle[errorCode] }}</h1>
+                    <h1 class="text-secondary text-4xl md:text-5xl lg:text-6xl">{{ errorTitle[errorCode] }}</h1>
                     <br/>
-                    <p class="text-secondary text-2xl">{{ errorDescription[errorCode] }}</p>
+                    <p class="text-secondary text-lg md:text-xl lg:text-2xl">{{ errorDescription[errorCode] }}</p>
                     <br/>
-                    <button class="btn btn-lg btn-secondary" @click="$router.push(`/`)">返回主页</button>
+                    <button class="btn btn-md md:btn-lg btn-secondary" @click="$router.push(`/`)">返回主页</button>
                 </main>
                 <SonoFooter/>
             </div>
@@ -60,15 +60,15 @@
         opacity: 0;
         scale: 105%;
     }
-
+    
     div#layout-default {
         background-image: linear-gradient(
                         to right,
-                        color-mix(in oklab, var(--color-primary), transparent 30%),
-                        color-mix(in oklab, var(--color-primary), transparent 30%)
+                        color-mix(in oklab, var(--color-primary), transparent 25%),
+                        color-mix(in oklab, var(--color-primary), transparent 25%)
         ),
         url("/static/Images/BgItems.webp"), linear-gradient(to right, var(--color-primary), var(--color-primary));
         background-size: cover;
-        background-position-y: -15%;
+        background-position: center; background-position-y: -15%; @media (max-width: 768px) { background-position-y: 0; }
     }
 </style>

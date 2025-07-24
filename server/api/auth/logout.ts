@@ -5,7 +5,11 @@ export default defineEventHandler(async (event) => {
     const userId = event.context.auth?.user?.id;
 
     if (!userId) {
-        throw createError({ statusCode: 400, message: "会话无效" });
+        throw createError({
+            statusCode: 400,
+            message: "用户未登录",
+            data: { errorCode: "LOGOUT:USER_NOT_LOGGED_IN" }
+        });
     }
 
     // 清除数据库中的refresh token

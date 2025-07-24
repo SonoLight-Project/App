@@ -16,6 +16,15 @@ export default defineNuxtConfig({
     modules: ["@nuxt/icon", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt"],
     css: ["~/assets/main.css"],
 
+    // icon: {
+    //     customCollections: [
+    //         {
+    //             prefix: "sonoicon-id",
+    //             dir: "./app/icons/identity/*"
+    //         },
+    //     ]
+    // },
+
     vite: {
         plugins: [tailwindcss()],
     },
