@@ -1,5 +1,5 @@
-import prisma from "../../utils/prisma";
-import bcrypt from "bcrypt";
+import supabase from "../../utils/db";
+import bcrypt from "bcryptjs";
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
         });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const { data: existingUser } = await supabase.from("users").select("*").eq("email", email).single();
+    if (existingUser) {
         throw createError({
             statusCode: 409,
             message: "邮箱已注册",
@@ -24,17 +24,13 @@ export default defineEventHandler(async (event) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await prisma.user.create({
-        data: {
+    await supabase.from("users").insert([
+        {
             username,
             email,
             passwordHash,
         },
-        select: {
-            id: true,
-            username: true,
-        },
-    });
+    ]);
 
     return { message: "注册成功" };
 });

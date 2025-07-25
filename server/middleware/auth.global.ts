@@ -1,5 +1,6 @@
 import { defineEventHandler, getCookie } from "h3"
-import jwt from "jsonwebtoken"
+import { jwtVerify } from 'jose/jwt/verify';
+
 
 export default defineEventHandler(async (event) => {
     const token = getCookie(event, "accessToken")
@@ -7,7 +8,11 @@ export default defineEventHandler(async (event) => {
     if (!token) return  // 不抛错，只是没有 user
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!)
+        const { payload } = await jwtVerify(
+  token,
+  new TextEncoder().encode(process.env.JWT_SECRET!)
+);
+const decoded = payload as { id: string, role: string }
         event.context.auth = {
             user: decoded,
         }

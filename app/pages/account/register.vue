@@ -2,6 +2,7 @@
     import { ref } from "vue"
     import { useRouter } from "vue-router"
     import { EventBus } from "~/modules/Eventbus";
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
     
     const username = ref("")
     const email = ref("")
@@ -33,7 +34,7 @@
         } catch (err: any) {
             EventBus.emit("toast:create", {
                 alertType: "error",
-                content: err?.data?.message || "注册失败，请检查输入"
+                content: wrapRequestErrorMessage(err, "注册失败，请检查输入"),
             })
         } finally {
             loading.value = false

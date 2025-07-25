@@ -17,7 +17,7 @@
     .prose {
         --tw-prose-body: color-mix(in oklab, var(--color-base-content) 95%, #0000);
         
-        :deep(h2 a) {
+        :deep(h2 a), :deep(h3 a) {
             text-decoration: none;
         }
     }

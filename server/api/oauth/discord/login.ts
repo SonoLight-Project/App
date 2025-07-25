@@ -1,7 +1,7 @@
-import prisma from "../../../utils/prisma";
+import supabase from "../../../utils/db";
 import { defineEventHandler, setCookie } from "h3";
 import { stringify } from "querystring";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose/jwt/sign";
 
 export default defineEventHandler(async (event) => {
     const { code } = await readBody(event);
@@ -70,13 +70,10 @@ export default defineEventHandler(async (event) => {
         }
     }
 
-    const { id, username } = userInfo as { id: string; username: string };
+    const { id } = userInfo as { id: string };
 
     // 查找Discord ID匹配的用户
-    const user = await prisma.user.findUnique({
-        where: { discordId: id },
-        select: { id: true, username: true, discordUsername: true, githubUsername: true },
-    });
+    const { data: user } = await supabase.from("users").select("id, username, role, discordUsername, githubUsername").eq("discordId", id).single();
 
     if (!user) {
         throw createError({
@@ -87,16 +84,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // 生成JWT token
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "15m" });
+    const accessToken = await new SignJWT({ id: user.id, role: user.role })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("15m")
+        .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
 
     // 生成refresh token
-    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
+    const refreshToken = await new SignJWT({ id: user.id })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("7d")
+        .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
 
     // 保存refresh token到数据库
-    await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken },
-    });
+    await supabase.from("users").update({ refreshToken }).eq("id", user.id);
 
     // 设置 HTTP-only Cookie
     setCookie(event, "accessToken", accessToken, {

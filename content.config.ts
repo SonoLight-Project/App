@@ -7,6 +7,12 @@ export default defineContentConfig({
             source: {
                 include: "docs/**/*.md",
             }
+        }),
+        blog: defineCollection({
+            type: "page",
+            source: {
+                include: "blog/**/*.md",
+            }
         })
     }
 })

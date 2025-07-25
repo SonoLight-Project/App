@@ -2,7 +2,8 @@
     import { useOAuthStore } from "~/stores/oauth";
     import { useAccountStore } from "~/stores/account";
     import type { IApiUserResponse } from "~/types/api/LoginType";
-    
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
+
     const $route = useRoute();
     const oauthStore = useOAuthStore();
     const accountStore = useAccountStore();
@@ -31,26 +32,31 @@
         
         try {
             const res: {
-                message: string,
-                user: IApiUserResponse
-            } = await $fetch(`/api/oauth/${ platform }/${ oauthStore.action }`, {
+                message: string;
+                user: IApiUserResponse;
+            } = await $fetch(`/api/oauth/${platform}/${oauthStore.action}`, {
                 method: "POST",
                 body: {
                     code,
                     state,
                 },
             });
-            
-            const _u = res.user as IApiUserResponse
+
+            const _u = res.user as IApiUserResponse;
             accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
-            
+
+            EventBus.emit("toast:create", {
+                alertType: "success",
+                content: "绑定成功",
+            });
+
             if (oauthStore.action === "login") {
                 return navigateTo("/dashboard");
             } else if (oauthStore.action === "bind") {
                 return navigateTo("/settings/account");
             }
         } catch (err: any) {
-            error.value = err.data?.message || "授权处理失败";
+            error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
         } finally {
             isLoading.value = false;
         }

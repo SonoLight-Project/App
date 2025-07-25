@@ -1,6 +1,7 @@
-import prisma from "../../utils/prisma";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import supabase from "../../utils/db";
+import bcrypt from "bcryptjs";
+import { SignJWT } from "jose/jwt/sign";
+
 import { setCookie } from "h3";
 
 export default defineEventHandler(async (event) => {
@@ -11,11 +12,11 @@ export default defineEventHandler(async (event) => {
         throw createError({
             statusCode: 400,
             message: "缺少邮箱或密码",
-            data: { errorCode: "LOGIN:MISSING_EMAIL_OR_PASSWORD" }
+            data: { errorCode: "LOGIN:MISSING_EMAIL_OR_PASSWORD" },
         });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const { data: user } = await supabase.from("users").select("*").eq("email", email).single();
 
     if (!user) {
         throw createError({ statusCode: 401, message: "用户不存在", data: { errorCode: "LOGIN:USER_NOT_FOUND" } });
@@ -28,16 +29,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // 生成JWT token
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "15m" });
+    const accessToken = await new SignJWT({ id: user.id, role: user.role })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("15m")
+        .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
 
     // 生成refresh token
-    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
+    const refreshToken = await new SignJWT({ id: user.id })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("7d")
+        .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
 
     // 保存refresh token到数据库
-    await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken },
-    });
+    await supabase.from("users").update({ refreshToken }).eq("id", user.id);
 
     // 设置 HTTP-only Cookie
     setCookie(event, "accessToken", accessToken, {
