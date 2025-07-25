@@ -1,23 +1,34 @@
 <script lang="ts" setup>
     import { EventBus } from "~/modules/Eventbus";
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
 
     const oauthStore = useOAuthStore();
 
     const startOAuthLogin = async (platform: "discord" | "github") => {
         oauthStore.setAction("login");
-        const uri = await $fetch("/api/oauth/query", {
-            method: "GET",
-            query: {
-                platform,
-            },
-        });
-        if (!uri) {
+        try {
+            const uri = await $fetch("/api/oauth/query", {
+                method: "GET",
+                query: {
+                    platform,
+                },
+            });
+            if (!uri) {
+                EventBus.emit("toast:create", {
+                    alertType: "error",
+                    content: "获取授权链接失败",
+                });
+                return;
+            }
+            window.location.href = uri;
+        } catch (error) {
             EventBus.emit("toast:create", {
                 alertType: "error",
-                content: "获取授权链接失败",
+                content: wrapRequestErrorMessage(error, "获取授权链接失败"),
             });
+            oauthStore.setOperation(false);
+            return;
         }
-        window.location.href = uri;
     };
 </script>
 
@@ -30,11 +41,11 @@
             <div class="card-body">
                 <button class="btn bg-[#5865F2] border-[#5865F2] text-white" @click="startOAuthLogin('discord')">
                     <Icon class="mr-1" name="ic:round-discord" size="18" />
-                    <span class="">Login with Discord (Dev Redirect URL) </span>
+                    <span class="">用 Discord 登录</span>
                 </button>
                 <button class="btn bg-[#171515] border-[#171515] text-white" @click="startOAuthLogin('github')">
                     <Icon class="mr-1" name="octicon:mark-github-16" size="18" />
-                    <span class="">Login with GitHub (Dev Redirect URL) </span>
+                    <span class="">用 GitHub 登录</span>
                 </button>
                 <div class="divider my-0"></div>
                 <fieldset class="fieldset">

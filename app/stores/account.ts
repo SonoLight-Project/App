@@ -9,13 +9,7 @@ export const useAccountStore = defineStore(
         const discordUsername = ref<string | null>(null);
         const githubUsername = ref<string | null>(null);
 
-        const setUser = (
-            newUserId: string,
-            newUserName: string,
-            newRole: number,
-            newDiscordUsername: string,
-            newGithubUsername: string
-        ) => {
+        const setUser = (newUserId: string, newUserName: string, newRole: number, newDiscordUsername: string, newGithubUsername: string) => {
             userId.value = newUserId;
             userName.value = newUserName;
             userRole.value = newRole;

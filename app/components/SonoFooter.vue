@@ -5,10 +5,10 @@
 <template>
     <footer class="footer sm:footer-horizontal bg-base-200 text-base-content p-10">
         <aside>
-            <img alt="SonoLight Border Iocn" class="size-16 -rotate-8" src="/static/Images/sonolight-border-icon.png"/>
+            <img alt="SonoLight Border Iocn" class="size-16 -rotate-8" src="/static/Images/sonolight-border-icon.png" />
             <p class="font-bold text-base">
                 声致发光 SonoLight
-                <br/>
+                <br />
                 版权所有 &copy; 2024~{{ yearNow }}，
                 <a class="link" href="https://github.com/SonoLight-Project">SonoLight 项目组</a>
                 保留所有权利。

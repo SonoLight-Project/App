@@ -12,7 +12,7 @@ export const useOAuthStore = defineStore(
 
         const setOperation = (newOperation: boolean) => {
             in_operation.value = newOperation;
-        }
+        };
 
         return {
             action,

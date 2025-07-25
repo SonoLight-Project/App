@@ -10,5 +10,5 @@ export async function handleDaisyUIDropdownClick<T extends (...args: any[]) => a
 }
 
 export function wrapRequestErrorMessage(error: any, fallback: string) {
-    return error.statusCode !== 500 ? (error?.data?.message || fallback) : "发生服务器内部错误，请联系管理员"
+    return error.statusCode !== 500 ? error?.data?.message || fallback : "发生服务器内部错误，请联系管理员";
 }
