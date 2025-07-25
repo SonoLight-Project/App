@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma";
+import supabase from "../../../utils/db";
 import { defineEventHandler } from "h3";
 import { stringify } from "querystring";
 
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     try {
         userInfo = await $fetch("https://discord.com/api/users/@me", {
             headers: {
-                Authorization: `Bearer ${ access_token }`,
+                Authorization: `Bearer ${access_token}`,
             },
         });
     } catch (error: any) {
@@ -85,9 +85,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查是否已被绑定
-    const existing = await prisma.user.findFirst({
-        where: { discordId: id, NOT: { id: userId } },
-    });
+    const { data: existing } = await supabase.from("users").select("*").eq("discord_id", id).neq("id", userId).single();
 
     if (existing) {
         throw createError({
@@ -98,24 +96,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 绑定Discord账户
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
-            discordId: id,
-            discordUsername: username,
-        },
-    });
+    await supabase.from("users").update({ discordId: id, discordUsername: username }).eq("id", userId);
 
-    const updatedUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            username: true,
-            role: true,
-            discordUsername: true,
-            githubUsername: true,
-        },
-    });
+    const { data: updatedUser } = await supabase.from("users").select("id, username, role, discordUsername, githubUsername").eq("id", userId).single();
 
     return { message: "绑定成功", user: updatedUser };
 });

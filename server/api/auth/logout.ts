@@ -1,4 +1,4 @@
-import prisma from "../../utils/prisma";
+import supabase from "../../utils/db";
 import { defineEventHandler, setCookie } from "h3";
 
 export default defineEventHandler(async (event) => {
@@ -8,15 +8,12 @@ export default defineEventHandler(async (event) => {
         throw createError({
             statusCode: 400,
             message: "用户未登录",
-            data: { errorCode: "LOGOUT:USER_NOT_LOGGED_IN" }
+            data: { errorCode: "LOGOUT:USER_NOT_LOGGED_IN" },
         });
     }
 
     // 清除数据库中的refresh token
-    await prisma.user.update({
-        where: { id: userId },
-        data: { refreshToken: null },
-    });
+    await supabase.from("users").update({ refreshToken: null }).eq("id", userId);
 
     // 清除客户端cookies
     setCookie(event, "accessToken", "", { maxAge: 0 });

@@ -1,5 +1,5 @@
-export function handleDaisyUIDropdownClick<T extends (...args: any[]) => any>(fn: T): ReturnType<T> {
-    const callback = fn();
+export async function handleDaisyUIDropdownClick<T extends (...args: any[]) => any>(fn: T): Promise<Awaited<ReturnType<T>>> {
+    const callback = await fn();
 
     // Close Dropdown Menu
     // @reference: https://daisyui.com/components/dropdown/

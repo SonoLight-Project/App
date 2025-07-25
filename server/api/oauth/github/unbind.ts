@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma";
+import supabase from "../../../utils/db";
 import { defineEventHandler } from "h3";
 
 export default defineEventHandler(async (event) => {
@@ -12,24 +12,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // 解绑GitHub账户
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
+    await supabase
+        .from("users")
+        .update({
             githubId: null,
             githubUsername: null,
-        },
-    });
+        })
+        .eq("id", userId);
 
-    const updatedUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            username: true,
-            role: true,
-            discordUsername: true,
-            githubUsername: true,
-        },
-    });
+    const { data: updatedUser } = await supabase.from("users").select("id, username, role, discordUsername, githubUsername").eq("id", userId).single();
 
     return { message: "解绑成功", user: updatedUser };
 });

@@ -1,4 +1,4 @@
-import prisma from "../../utils/prisma";
+import supabase from "../../utils/db";
 import { jwtVerify } from "jose/jwt/verify";
 import { SignJWT } from "jose/jwt/sign";
 
@@ -22,9 +22,7 @@ export default defineEventHandler(async (event) => {
         const decoded = payload as { id: string };
 
         // 查询用户并验证refreshToken
-        const user = await prisma.user.findUnique({
-            where: { id: decoded.id },
-        });
+        const { data: user } = await supabase.from("users").select("*").eq("id", decoded.id).single();
 
         if (!user || user.refreshToken !== refreshToken) {
             throw createError({
@@ -58,7 +56,8 @@ export default defineEventHandler(async (event) => {
         return { message: "已刷新 AccessToken", user: updatedUser };
     } catch (error: any) {
         // 重投
-        if (error.data.data.errorCode === "REFRESH:INVALID_TOKEN") throw error;
+        const _edat = error.data.data
+        if (_edat && _edat.errorCode === "REFRESH:INVALID_TOKEN") throw error;
 
         if (error.name === "TokenExpiredError") {
             throw createError({

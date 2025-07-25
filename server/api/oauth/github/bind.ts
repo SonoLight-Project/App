@@ -1,4 +1,4 @@
-import prisma from "../../../utils/prisma";
+import supabase from "../../../utils/db";
 import { defineEventHandler } from "h3";
 
 export default defineEventHandler(async (event) => {
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     // 获取用户信息
     const userInfo = await $fetch("https://api.github.com/user", {
         headers: {
-            Authorization: `token ${ access_token }`,
+            Authorization: `token ${access_token}`,
         },
     });
 
@@ -42,14 +42,12 @@ export default defineEventHandler(async (event) => {
         throw createError({
             statusCode: 401,
             message: "需要先登录",
-            data: { errorCode: "GH_OAUTH_BIND:USER_NOT_LOGGED_IN" }
+            data: { errorCode: "GH_OAUTH_BIND:USER_NOT_LOGGED_IN" },
         });
     }
 
     // 检查是否已被绑定
-    const existing = await prisma.user.findFirst({
-        where: { githubId: id.toString(), NOT: { id: userId } },
-    });
+    const { data: existing } = await supabase.from("users").select("*").eq("github_id", id.toString()).neq("id", userId).single();
 
     if (existing) {
         throw createError({
@@ -60,24 +58,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 绑定GitHub账户
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
-            githubId: id.toString(),
-            githubUsername: login,
-        },
-    });
+    await supabase.from("users").update({ githubId: id.toString(), githubUsername: login }).eq("id", userId);
 
-    const updatedUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            username: true,
-            role: true,
-            discordUsername: true,
-            githubUsername: true,
-        },
-    });
+    const { data: updatedUser } = await supabase.from("users").select("id, username, role, discordUsername, githubUsername").eq("id", userId).single();
 
     return { message: "绑定成功", user: updatedUser };
 });
