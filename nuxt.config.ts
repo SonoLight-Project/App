@@ -28,4 +28,8 @@ export default defineNuxtConfig({
     vite: {
         plugins: [tailwindcss()],
     },
+
+    nitro: {
+        preset: "vercel-serverless" // Vercel Compatibility
+    }
 });
