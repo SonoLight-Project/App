@@ -1,6 +1,6 @@
 type Bit = boolean;
 
-interface BitmapInterface extends Iterable<Bit> {
+export interface IBitmapInterface extends Iterable<Bit> {
     readonly length: number;
 
     // 单 bit 操作
@@ -28,9 +28,11 @@ interface BitmapInterface extends Iterable<Bit> {
     xor(other: Bitmap): Bitmap;
     invert(): Bitmap;
     concat(other: Bitmap): Bitmap;
+    equals(other: Bitmap): boolean;
+    hash(): string;
 }
 
-declare class Bitmap implements BitmapInterface {
+declare class Bitmap implements IBitmapInterface {
     constructor(bits?: number);
     static fromHexString(hex: string): Bitmap;
 
@@ -50,10 +52,14 @@ declare class Bitmap implements BitmapInterface {
     toHexString(): string;
     toBigIntArray(): bigint[];
     toString(): string;
+    hash(): string;
 
     and(other: Bitmap): Bitmap;
     or(other: Bitmap): Bitmap;
     xor(other: Bitmap): Bitmap;
     invert(): Bitmap;
     concat(other: Bitmap): Bitmap;
+    equals(other: Bitmap): boolean;
 }
+
+export default Bitmap;

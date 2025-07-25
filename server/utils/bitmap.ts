@@ -1,7 +1,9 @@
+import { IBitmapInterface } from '~/types/bitmap' 
+
 /* 
 * Bitmap 使用Uint8Array模拟
 */
-export default class Bitmap {
+export default class Bitmap implements IBitmapInterface {
     private data: Uint8Array;
     private _length: number = 0;
 
@@ -60,6 +62,18 @@ export default class Bitmap {
 
     get length(): number {
         return this._length;
+    }
+
+    equals(other: Bitmap): boolean {
+        if (this.length !== other.length) return false;
+        for (let i = 0; i < this.length; i++) {
+            if (this.get(i) !== other.get(i)) return false;
+        }
+        return true;
+    }
+
+    hash(): string {
+        return this.toHexString(); // 或者 Base64、SHA1 等
     }
 
     /**
