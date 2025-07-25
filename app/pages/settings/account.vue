@@ -13,7 +13,7 @@
     
     // 检查用户是否已登录
     if (!accountStore.userId) {
-        router.push("/login");
+        router.push("/account/login");
     }
     
     const avatarName = computed(() => {
