@@ -1,5 +1,5 @@
 import prisma from "../../utils/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
