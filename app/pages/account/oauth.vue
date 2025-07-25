@@ -1,16 +1,23 @@
 <script lang="ts" setup>
-    import * as Std from "~/modules/publicData";
+    import { EventBus } from "~/modules/Eventbus";
 
     const oauthStore = useOAuthStore();
 
-    const oauthUri = {
-        discord: Std.DISCORD_OAUTH_URI,
-        github: Std.GITHUB_OAUTH_URI,
-    };
-
-    const startOAuthLogin = (platform: "discord" | "github") => {
+    const startOAuthLogin = async (platform: "discord" | "github") => {
         oauthStore.setAction("login");
-        window.location.href = oauthUri[platform];
+        const uri = await $fetch("/api/oauth/query", {
+            method: "GET",
+            query: {
+                platform,
+            },
+        });
+        if (!uri) {
+            EventBus.emit("toast:create", {
+                alertType: "error",
+                content: "获取授权链接失败",
+            });
+        }
+        window.location.href = uri;
     };
 </script>
 

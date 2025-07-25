@@ -1,72 +1,93 @@
 <script lang="ts" setup>
     import { useRouter } from "vue-router";
     import { useOAuthStore } from "@/stores/oauth";
-    import * as Std from "~/modules/publicData";
     import { EventBus } from "~/modules/Eventbus";
     import type { IApiUserResponse } from "~/types/api/LoginType";
-
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
+    
     const router = useRouter();
     const accountStore = useAccountStore();
     const oauthStore = useOAuthStore();
     const confirm_modal = ref<HTMLDialogElement | null>(null);
     const confirm_platform = ref<string | null>(null);
-
+    
     // 检查用户是否已登录
     if (!accountStore.userId) {
         router.push("/account/login");
     }
-
+    
     const avatarName = computed(() => {
         const name = accountStore.userName?.trim();
         if (!name) return;
-
+        
         const stringWrapper = (t: string) => t.charAt(0).toUpperCase();
-
+        
         const parts = name.split(/\s+/); // 支持多个空格间隔
         if (parts.length >= 2) {
             return stringWrapper(parts[0]!) + stringWrapper(parts[1]!);
         }
         return stringWrapper(parts[0]!);
     });
-
-    const oauthUri = {
-        discord: Std.DISCORD_OAUTH_URI,
-        github: Std.GITHUB_OAUTH_URI,
-    };
-
+    
     // 绑定OAuth账户
-    const bindOAuth = (platform: "github" | "discord") => {
+    const bindOAuth = async (platform: "github" | "discord") => {
+        oauthStore.setOperation(true);
         oauthStore.setAction("bind");
-        window.location.href = oauthUri[platform];
+        try {
+            const uri = await $fetch("/api/oauth/query", {
+                method: "GET",
+                query: {
+                    platform,
+                },
+            });
+            if (!uri) {
+                EventBus.emit("toast:create", {
+                    alertType: "error",
+                    content: "获取授权链接失败",
+                });
+                return;
+            }
+            window.location.href = uri;
+        } catch (error) {
+            EventBus.emit("toast:create", {
+                alertType: "error",
+                content: wrapRequestErrorMessage(error, "获取授权链接失败"),
+            });
+            oauthStore.setOperation(false);
+            return;
+        }
     };
-
+    
     // 解绑OAuth账户
     const ensureUnbindOAuth = async (platform: "github" | "discord") => {
         confirm_platform.value = platform === "github" ? "GitHub" : "Discord";
         confirm_modal.value?.show();
     };
-
+    
     const unbindOAuth = async () => {
+        oauthStore.setOperation(true);
         try {
-            const res = await $fetch(`/api/oauth/${confirm_platform.value?.toLowerCase()}/unbind`, {
+            const res = await $fetch(`/api/oauth/${ confirm_platform.value?.toLowerCase() }/unbind`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
             });
-
+            
             const _u = (res as unknown as { user: IApiUserResponse }).user;
             accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
-
+            
             EventBus.emit("toast:create", {
                 alertType: "success",
-                content: `${confirm_platform.value} 账户解绑成功`,
+                content: `${ confirm_platform.value } 账户解绑成功`,
             });
         } catch (error) {
             EventBus.emit("toast:create", {
                 alertType: "error",
-                content: `${confirm_platform.value} 解绑失败`,
+                content: `${ confirm_platform.value } 解绑失败`,
             });
+        } finally {
+            oauthStore.setOperation(false);
         }
     };
 </script>
@@ -85,7 +106,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- 主内容区 -->
         <div class="w-full space-y-4">
             <!-- 用户基本信息卡片 -->
@@ -105,54 +126,56 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- OAuth 连接状态卡片 -->
             <div class="card bg-base-100 shadow-md">
                 <div class="card-body">
                     <h2 class="card-title text-xl">第三方账户连接</h2>
                     <p class="text-gray-500 mb-6">管理您的社交媒体账户连接</p>
-
+                    
                     <!-- Discord 连接 -->
                     <div class="flex items-center justify-between p-4 border rounded-lg mb-4 hover:bg-base-200 transition-colors">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full bg-[#5865F2]/50 flex items-center justify-center">
-                                <Icon name="ic:round-discord" size="24" />
+                                <Icon name="ic:round-discord" size="24"/>
                             </div>
                             <div>
                                 <h3 class="text-lg font-medium">Discord</h3>
                                 <p class="text-sm text-gray-500">
-                                    {{ accountStore.discordUsername ? `已绑定 @${accountStore.discordUsername}` : "未连接" }}
+                                    {{ accountStore.discordUsername ? `已绑定 @${ accountStore.discordUsername }` : "未连接" }}
                                 </p>
                             </div>
                         </div>
                         <div>
                             <button
-                                :class="accountStore.discordUsername ? 'btn-error' : 'btn-success'"
-                                class="btn btn-sm"
-                                @click="accountStore.discordUsername ? ensureUnbindOAuth('discord') : bindOAuth('discord')">
+                                    :class="accountStore.discordUsername ? 'btn-error' : 'btn-success'"
+                                    :disabled="oauthStore.in_operation"
+                                    class="btn btn-sm"
+                                    @click="accountStore.discordUsername ? ensureUnbindOAuth('discord') : bindOAuth('discord')">
                                 {{ accountStore.discordUsername ? "解除绑定" : "绑定账户" }}
                             </button>
                         </div>
                     </div>
-
+                    
                     <!-- GitHub 连接 -->
                     <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-base-200 transition-colors">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full bg-[#171515]/50 flex items-center justify-center">
-                                <Icon name="octicon:mark-github-24" size="24" />
+                                <Icon name="octicon:mark-github-24" size="24"/>
                             </div>
                             <div>
                                 <h3 class="text-lg font-medium">GitHub</h3>
                                 <p class="text-sm text-gray-500">
-                                    {{ accountStore.githubUsername ? `已绑定 ${accountStore.githubUsername}` : "未连接" }}
+                                    {{ accountStore.githubUsername ? `已绑定 ${ accountStore.githubUsername }` : "未连接" }}
                                 </p>
                             </div>
                         </div>
                         <div>
                             <button
-                                :class="accountStore.githubUsername ? 'btn-error' : 'btn-success'"
-                                class="btn btn-sm"
-                                @click="accountStore.githubUsername ? ensureUnbindOAuth('github') : bindOAuth('github')">
+                                    :class="accountStore.githubUsername ? 'btn-error' : 'btn-success'"
+                                    :disabled="oauthStore.in_operation"
+                                    class="btn btn-sm"
+                                    @click="accountStore.githubUsername ? ensureUnbindOAuth('github') : bindOAuth('github')">
                                 {{ accountStore.githubUsername ? "解除绑定" : "绑定账户" }}
                             </button>
                         </div>
@@ -179,7 +202,7 @@
     .card {
         transition: all 0.3s ease;
     }
-
+    
     .card:hover {
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
