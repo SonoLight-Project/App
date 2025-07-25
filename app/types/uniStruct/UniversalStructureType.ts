@@ -1,4 +1,6 @@
-export interface UniversalStructureMeta {
+// unistruct -> universal structure
+
+export interface IUniStructMeta {
     name: string
     author: string
     description: string
@@ -8,16 +10,12 @@ export interface UniversalStructureMeta {
     modifiedTime: Date
 }
 
-export interface UniversalStructureBlock {
+export interface IUniBlock {
     id: string
     properties?: Record<string, any>
 }
 
-type HexChar = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' |
-                '8' | '9' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' |
-                'A' | 'B' | 'C' | 'D' | 'E' | 'F';
-
-type HexString = HexChar[]
+type IHexString = string;
 
 
 /**
@@ -44,14 +42,13 @@ type HexString = HexChar[]
  *          nowBitmap = bitmap(0)
  *                   
  */
-export interface UniversalStructure {
+export interface IUniStruct {
     minecraftDataVersion: number
-    version: number
-    meta: UniversalStructureMeta
+    meta: IUniStructMeta
     regions: {
         [key: string] : {
-            blocks: HexString
-            palette: Map<HexString, UniversalStructureBlock> 
+            blocks: IHexString
+            palette: Map<IHexString, IUniBlock> 
             size: { x: number; y: number; z: number }
             position: { x: number; y: number; z: number }
         }
