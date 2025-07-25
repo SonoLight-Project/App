@@ -2,6 +2,7 @@
     import { useOAuthStore } from "~/stores/oauth";
     import { useAccountStore } from "~/stores/account";
     import type { IApiUserResponse } from "~/types/api/LoginType";
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
     
     const $route = useRoute();
     const oauthStore = useOAuthStore();
@@ -50,7 +51,7 @@
                 return navigateTo("/settings/account");
             }
         } catch (err: any) {
-            error.value = err.data?.message || "授权处理失败";
+            error.value = wrapRequestErrorMessage(err, "授权处理失败");
         } finally {
             isLoading.value = false;
         }

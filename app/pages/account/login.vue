@@ -3,6 +3,7 @@
     import { EventBus } from "~/modules/Eventbus";
     import { useAccountStore } from "~/stores/account";
     import type { IApiUserResponse } from "~/types/api/LoginType";
+    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
     
     const accountStore = useAccountStore();
     
@@ -36,7 +37,7 @@
             // 登录失败，展示错误信息
             EventBus.emit("toast:create", {
                 alertType: "error",
-                content: err?.data?.message || "登录失败，请重试",
+                content: wrapRequestErrorMessage(err, "登录失败，请重试"),
             });
         } finally {
             loading.value = false;

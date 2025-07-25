@@ -23,8 +23,8 @@
         </nav>
         <nav>
             <h6 class="footer-title">社区指引</h6>
-            <a class="link link-hover" @click="$router.push('/docs/legal/community-policy')">「 社区创建政策 」</a>
-            <a class="link link-hover" @click="$router.push('/docs/legal/community-guidence')">「 社区指导方针 」</a>
+            <a class="link link-hover" @click="$router.push('/docs/community/creation-policy')">「 社区创建政策 」</a>
+            <a class="link link-hover" @click="$router.push('/docs/community/guidence')">「 社区指导方针 」</a>
         </nav>
     </footer>
 </template>

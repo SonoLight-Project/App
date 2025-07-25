@@ -8,3 +8,7 @@ export function handleDaisyUIDropdownClick<T extends (...args: any[]) => any>(fn
 
     return callback;
 }
+
+export function wrapRequestErrorMessage(error: any, fallback: string) {
+    return error.statusCode !== 500 ? (error?.data?.message || fallback) : "发生服务器内部错误，请联系管理员"
+}
