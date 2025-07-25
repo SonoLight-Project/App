@@ -1,6 +1,7 @@
 import prisma from "../../../utils/prisma";
 import { defineEventHandler, setCookie } from "h3";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose/jwt/sign";
+
 
 export default defineEventHandler(async (event) => {
     const { code } = await readBody(event);
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
     // 获取用户信息
     const userInfo = await $fetch("https://api.github.com/user", {
         headers: {
-            Authorization: `token ${ access_token }`,
+            Authorization: `token ${access_token}`,
         },
     });
 
@@ -53,10 +54,16 @@ export default defineEventHandler(async (event) => {
     }
 
     // 生成JWT token
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: "15m" });
+    const accessToken = await new SignJWT({ id: user.id, role: user.role })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("15m")
+        .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
 
     // 生成refresh token
-    const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
+    const refreshToken = await new SignJWT({ id: user.id })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("7d")
+        .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
 
     // 保存refresh token到数据库
     await prisma.user.update({
