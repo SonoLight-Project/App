@@ -17,24 +17,14 @@
             </p>
         </aside>
         <nav>
-            <h6 class="footer-title">Services</h6>
-            <a class="link link-hover">Branding</a>
-            <a class="link link-hover">Design</a>
-            <a class="link link-hover">Marketing</a>
-            <a class="link link-hover">Advertisement</a>
+            <h6 class="footer-title">法律信息</h6>
+            <a class="link link-hover" @click="$router.push('/docs/legal/tos')">「 服务协议 (ToS) 」</a>
+            <a class="link link-hover" @click="$router.push('/docs/legal/privacy-policy')">「 隐私政策 」</a>
         </nav>
         <nav>
-            <h6 class="footer-title">Company</h6>
-            <a class="link link-hover">About us</a>
-            <a class="link link-hover">Contact</a>
-            <a class="link link-hover">Jobs</a>
-            <a class="link link-hover">Press kit</a>
-        </nav>
-        <nav>
-            <h6 class="footer-title">Legal</h6>
-            <a class="link link-hover">Terms of use</a>
-            <a class="link link-hover">Privacy policy</a>
-            <a class="link link-hover">Cookie policy</a>
+            <h6 class="footer-title">社区指引</h6>
+            <a class="link link-hover" @click="$router.push('/docs/legal/community-policy')">「 社区创建政策 」</a>
+            <a class="link link-hover" @click="$router.push('/docs/legal/community-guidence')">「 社区指导方针 」</a>
         </nav>
     </footer>
 </template>

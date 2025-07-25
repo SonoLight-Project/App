@@ -1,7 +1,9 @@
 <script lang="ts" setup>
     import { EventBus } from "~/modules/Eventbus";
     import { useAccountStore } from "~/stores/account";
+    import { handleDaisyUIDropdownClick } from "~/modules/publicFunction";
     
+    const $route = useRoute();
     const accountStore = useAccountStore();
     
     const avatarName = computed(() => {
@@ -22,7 +24,18 @@
     
     const handleLogout = async () => {
         try {
-            await $fetch("/api/auth/logout", { method: "POST" });
+            try {
+                await $fetch("/api/auth/logout", { method: "POST" });
+            } catch (error: any) {
+                const _edat = error.data;
+                if (_edat.data && _edat.data.errorCode === "LOGOUT:USER_NOT_LOGGED_IN") {
+                    // 可能会产生 Token 过期，这时候可以忽略
+                    console.log(`登出可忽略地失败：Code ${ _edat.statusCode } | Message ${ _edat.message } | PlatformError ${ _edat.data.errorCode }`);
+                } else {
+                    // 否则重投 Error
+                    throw error;
+                }
+            }
             accountStore.clearUser();
             await router.push("/");
         } catch (error: any) {
@@ -38,27 +51,54 @@
     <div class="fixed top-0 bg-transparent border-b border-base-100 backdrop-blur-lg z-10 navbar p-0 px-4 w-full">
         <section class="navbar-start">
             <div class="flex-none lg:hidden">
-                <label aria-label="open sidebar" class="btn btn-square btn-ghost" for="drawer">
-                    <Icon name="ic:round-format-list-bulleted" size="24"/>
-                </label>
+                <div class="dropdown">
+                    <button class="btn btn-square">
+                        <Icon name="ic:round-format-list-bulleted" size="24"/>
+                    </button>
+                    <ul class="dropdown-content menu bg-base-100 rounded-sm z-1 w-32 p-2 shadow-sm" tabindex="0">
+                        <li><a :class="{'bg-secondary/25 shadow-sm': $route.path === '/'}"
+                               @click="handleDaisyUIDropdownClick(() => $router.push(`/`))">
+                            <Icon class="-translate-y-0.25" name="ic:round-home" size="18"/>
+                            主页
+                        </a></li>
+                        <li><a :class="{'bg-secondary/25 shadow-sm': $route.path.startsWith('/dashboard')}"
+                               @click="handleDaisyUIDropdownClick(() => $router.push(`/dashboard`))">
+                            <Icon class="-translate-y-0.25" name="ic:round-dashboard" size="18"/>
+                            面板
+                        </a></li>
+                        <li><a :class="{'bg-secondary/25 shadow-sm': $route.path.startsWith('/blog')}"
+                               @click="handleDaisyUIDropdownClick(() => $router.push(`/blog`))">
+                            <Icon class="-translate-y-0.25" name="ic:round-event-note" size="18"/>
+                            博客
+                        </a></li>
+                        <li><a :class="{'bg-secondary/25 shadow-sm': $route.path === '/company/contact'}"
+                               @click="handleDaisyUIDropdownClick(() => $router.push(`/company/contact`))">
+                            <Icon class="-translate-y-0.25" name="ic:round-contact-support" size="18"/>
+                            联系我们
+                        </a></li>
+                    </ul>
+                </div>
             </div>
             <div class="mx-2 flex-1 px-2 text-lg">声致发光</div>
         </section>
         <section class="hidden lg:inline-flex navbar-center">
             <ul class="menu menu-horizontal gap-2">
-                <li><a @click="$router.push(`/`)">
+                <li><a :class="{'bg-secondary/25 shadow-sm': $route.path === '/'}" @click="$router.push(`/`)">
                     <Icon class="-translate-y-0.25" name="ic:round-home" size="18"/>
                     主页
                 </a></li>
-                <li><a @click="$router.push(`/dashboard`)">
+                <li><a :class="{'bg-secondary/25 shadow-sm': $route.path.startsWith('/dashboard')}"
+                       @click="$router.push(`/dashboard`)">
                     <Icon class="-translate-y-0.25" name="ic:round-dashboard" size="18"/>
                     面板
                 </a></li>
-                <li><a @click="$router.push(`/blog`)">
+                <li><a :class="{'bg-secondary/25 shadow-sm': $route.path.startsWith('/blog')}"
+                       @click="$router.push(`/blog`)">
                     <Icon class="-translate-y-0.25" name="ic:round-event-note" size="18"/>
                     博客
                 </a></li>
-                <li><a @click="$router.push(`/more/contact-us`)">
+                <li><a :class="{'bg-secondary/25 shadow-sm': $route.path === '/company/contact'}"
+                       @click="$router.push(`/company/contact`)">
                     <Icon class="-translate-y-0.25" name="ic:round-contact-support" size="18"/>
                     联系我们
                 </a></li>
@@ -78,39 +118,17 @@
                     </div>
                 </div>
                 <ul class="dropdown-content menu bg-base-100 rounded-sm z-1 w-32 p-2 shadow-sm" tabindex="0">
-                    <li><a @click="$router.push('/settings/account')">
+                    <li><a @click="handleDaisyUIDropdownClick(() => $router.push('/settings/account'))">
                         <Icon name="ic:round-admin-panel-settings" size="20"/>
                         账户设置
                     </a></li>
-                    <li><a @click="handleLogout">
+                    <li><a @click="handleDaisyUIDropdownClick(handleLogout)">
                         <Icon name="ic:round-logout" size="20"/>
                         登出
                     </a></li>
                 </ul>
             </div>
         </section>
-    </div>
-    <div class="drawer-side">
-        <label aria-label="close sidebar" class="drawer-overlay" for="drawer"></label>
-        <ul class="menu bg-base-200 min-h-full w-80 p-4">
-            <!-- Sidebar content here -->
-            <li><a @click="$router.push(`/`)">
-                <Icon class="-translate-y-0.25" name="ic:round-home" size="18"/>
-                主页
-            </a></li>
-            <li><a @click="$router.push(`/dashboard`)">
-                <Icon class="-translate-y-0.25" name="ic:round-dashboard" size="18"/>
-                面板
-            </a></li>
-            <li><a @click="$router.push(`/blog`)">
-                <Icon class="-translate-y-0.25" name="ic:round-event-note" size="18"/>
-                博客
-            </a></li>
-            <li><a @click="$router.push(`/more/contact-us`)">
-                <Icon class="-translate-y-0.25" name="ic:round-contact-support" size="18"/>
-                联系我们
-            </a></li>
-        </ul>
     </div>
 </template>
 

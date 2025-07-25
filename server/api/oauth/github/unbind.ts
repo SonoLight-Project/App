@@ -4,7 +4,11 @@ import { defineEventHandler } from "h3";
 export default defineEventHandler(async (event) => {
     const userId = event.context.auth?.user?.id;
     if (!userId) {
-        throw createError({ statusCode: 401, message: "需要先登录" });
+        throw createError({
+            statusCode: 401,
+            message: "需要先登录",
+            data: { errorCode: "GH_OAUTH_UNBIND:USER_NOT_LOGGED_IN" },
+        });
     }
 
     // 解绑GitHub账户
@@ -21,6 +25,7 @@ export default defineEventHandler(async (event) => {
         select: {
             id: true,
             username: true,
+            role: true,
             discordUsername: true,
             githubUsername: true,
         },

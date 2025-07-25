@@ -4,15 +4,14 @@
 <template>
     <div class="w-screen p-0">
         <SonoNav/>
-        <div id="layout-default" class="w-full h-full pt-16">
-            <div class="w-full h-full">
-                <!-- Content HERE -->
-                <NuxtPage class="min-h-screen"/>
-            </div>
-        </div>
+        <section class="w-full h-full bg-primary/75 backdrop-blur-xs">
+            <!-- Content HERE -->
+            <NuxtPage class="min-h-screen"/>
+        </section>
         <SonoFooter/>
     </div>
     <SonoToast/>
+    <div id="layout-default" class="w-screen h-screen fixed top-0 left-0 -z-999"></div>
 </template>
 
 <style lang="scss">
@@ -32,14 +31,8 @@
     }
     
     div#layout-default {
-        background-image: linear-gradient(
-                        to right,
-                        color-mix(in oklab, var(--color-primary), transparent 25%),
-                        color-mix(in oklab, var(--color-primary), transparent 25%)
-        ),
-        url("/static/Images/BgMachine.webp");
+        background-image: url("/static/Images/BgMachine.webp");
         background-repeat: no-repeat;
-        background-size: cover;
-        background-position-y: 50%;
+        background-size: contain;
     }
 </style>

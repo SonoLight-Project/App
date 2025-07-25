@@ -14,21 +14,21 @@
 
         <!-- 特性卡片区域 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12 w-3/4 md:w-1/2">
-            <div class="backdrop-blur-lg bg-base-100/10 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
+            <div class="bg-primary/90 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
                 <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
                     <Icon class="text-secondary" name="mdi:database" size="24" />
                 </div>
                 <h3 class="text-secondary text-xl font-semibold mb-2">安全存储</h3>
                 <p class="text-secondary/70">多重备份机制，确保您的 Minecraft 资产永久保存</p>
             </div>
-            <div class="backdrop-blur-lg bg-base-100/10 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
+            <div class="bg-primary/90 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
                 <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
                     <Icon class="text-secondary" name="mdi:tag-multiple" size="24" />
                 </div>
                 <h3 class="text-secondary text-xl font-semibold mb-2">智能分类</h3>
                 <p class="text-secondary/70">自动化标签系统，轻松管理各类建筑与存档资源</p>
             </div>
-            <div class="backdrop-blur-lg bg-base-100/10 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
+            <div class="bg-primary/90 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-secondary/10">
                 <div class="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
                     <Icon class="text-secondary" name="mdi:share-variant" size="24" />
                 </div>

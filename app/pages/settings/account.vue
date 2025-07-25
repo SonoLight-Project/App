@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-    import { useAccountStore } from "@/stores/account";
     import { useRouter } from "vue-router";
     import { useOAuthStore } from "@/stores/oauth";
-    import * as Std from "~/modules/staticData";
+    import * as Std from "~/modules/publicData";
+    import { EventBus } from "~/modules/Eventbus";
+    import type { IApiUserResponse } from "~/types/api/LoginType";
     
     const router = useRouter();
     const accountStore = useAccountStore();
@@ -54,17 +55,13 @@
                 },
             });
             
-            interface IUser {
-                id: string;
-                username: string;
-                discordUsername: string;
-                githubUsername: string;
-            }
-            
-            const _u = (res as unknown as { user: IUser }).user;
-            accountStore.setUser(_u["id"], _u["username"], _u["discordUsername"], _u["githubUsername"]);
+            const _u = (res as unknown as { user: IApiUserResponse }).user;
+            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
         } catch (error) {
-            console.error("解绑失败:", error);
+            EventBus.emit("toast:create", {
+                alertType: "error",
+                content: "解绑失败"
+            })
         }
     }
 </script>
@@ -91,7 +88,7 @@
                 <div class="card-body">
                     <h2 class="card-title text-xl">个人信息</h2>
                     <div class="flex items-center space-x-4 mt-4">
-                        <div class="avatar avatar-online avatar-placeholder scale-110 ml-4 cursor-pointer" role="button"
+                        <div class="avatar avatar-online avatar-placeholder scale-110 ml-4" role="button"
                              tabindex="0">
                             <div class="bg-neutral text-neutral-content w-10 rounded-full">
                                 <span class="-translate-x-[0.5px]">{{ avatarName }}</span>
@@ -160,13 +157,13 @@
             </div>
         </div>
         <dialog ref="confirm_modal" class="modal">
-            <div class="modal-box">
-                <h3 class="text-lg font-bold">操作确认</h3>
+            <div class="modal-box shadow-[0_0_6px_0_var(--color-error)]">
+                <h3 class="text-lg text-error font-bold">操作确认</h3>
                 <p class="py-4">确定要解绑您的 {{ confirm_platform }} 账户吗？</p>
                 <div class="modal-action">
                     <form method="dialog">
-                        <button class="btn btn-success btn-outline mr-4" @click="unbindOAuth()">确认</button>
-                        <button class="btn btn-error">取消</button>
+                        <button class="btn btn-error btn-outline mr-4" @click="unbindOAuth()">确认</button>
+                        <button class="btn btn-outline">取消</button>
                     </form>
                 </div>
             </div>
