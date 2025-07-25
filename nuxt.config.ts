@@ -30,6 +30,7 @@ export default defineNuxtConfig({
     },
 
     nitro: {
-        preset: "vercel" // Vercel Compatibility
+        // Vercel Compatibility
+        preset: "vercel-edge"
     }
 });
