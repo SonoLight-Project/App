@@ -30,6 +30,6 @@ export default defineNuxtConfig({
     },
 
     nitro: {
-        preset: "vercel-serverless" // Vercel Compatibility
+        preset: "vercel" // Vercel Compatibility
     }
 });
