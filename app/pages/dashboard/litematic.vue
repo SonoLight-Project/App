@@ -36,8 +36,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { parseLitematica } from '~/stores/useLitematicaParser'
-import type { ParsedLitematica } from '~/stores/useLitematicaParser'
+import { parseLitematica } from '~/stores/litematic-parser'
+import type { ParsedLitematica } from '~/stores/litematic-parser'
 
 const parsed = ref<ParsedLitematica | null>(null)
 

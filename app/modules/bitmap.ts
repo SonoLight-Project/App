@@ -1,4 +1,4 @@
-import { IBitmapInterface } from '~/types/bitmap' 
+import type { IBitmapInterface } from '~/types/bitmap' 
 
 /* 
 * Bitmap 使用Uint8Array模拟
