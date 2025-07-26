@@ -4,4 +4,5 @@ export interface IApiUserResponse {
     role: number;
     discordUsername: string;
     githubUsername: string;
+    mcjpgUsername: string;
 }

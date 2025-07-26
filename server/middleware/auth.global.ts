@@ -5,6 +5,9 @@ import { desensitization } from "../utils/desensitization";
 import { random } from "lodash-es";
 
 export default defineEventHandler(async (event) => {
+    const _url = event.node.req.url;
+    if (_url?.startsWith("/api/_") || !_url?.startsWith("/api")) return;
+
     const JobId = logger.createJob(`Event OnReq/Auth #${random(9999)}`);
     logger.info("开始处理事件认证", JobId);
 

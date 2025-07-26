@@ -9,7 +9,12 @@ export default defineNuxtPlugin((nuxtApp) => {
             const statusCode = err?.statusCode || err?.response?.status;
             const errorCode = err?.data?.errorCode || "";
 
-            if (statusCode === 400 && typeof errorCode === "string" && errorCode.includes("USER_NOT_LOGGED_IN")) {
+            if (
+                request.toString().startsWith("/api/") &&
+                statusCode === 400 &&
+                typeof errorCode === "string" &&
+                errorCode.includes("USER_NOT_LOGGED_IN")
+            ) {
                 // 1. 尝试刷新 accessToken
                 try {
                     await nx$fetch("/api/auth/refresh-token", {

@@ -4,7 +4,7 @@
 
     const oauthStore = useOAuthStore();
 
-    const startOAuthLogin = async (platform: "discord" | "github") => {
+    const startOAuthLogin = async (platform: "discord" | "github" | "mcjpg") => {
         oauthStore.setAction("login");
         try {
             const uri = await $fetch("/api/oauth/query", {
@@ -46,6 +46,11 @@
                 <button class="btn bg-[#171515] border-[#171515] text-white" @click="startOAuthLogin('github')">
                     <Icon class="mr-1" name="octicon:mark-github-16" size="18" />
                     <span class="">用 GitHub 登录</span>
+                </button>
+                <button class="btn bg-[#FFAC38] border-[#FFAC38] text-black" @click="startOAuthLogin('mcjpg')">
+                    <!-- <Icon class="mr-1" name="octicon:mark-github-16" size="18" /> -->
+                    <img src="https://mcjpg.org/logo.png" class="w-4.5 h-4.5 mr-1" />
+                    <span class="">用 MCJPG 通行证登录</span>
                 </button>
                 <div class="divider my-0"></div>
                 <fieldset class="fieldset">

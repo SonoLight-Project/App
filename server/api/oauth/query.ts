@@ -26,13 +26,19 @@ export default defineEventHandler(async (event) => {
                 logger.debug("返回 GitHub OAuth URI", JobId);
                 return (
                     process.env.GITHUB_OAUTH_URI ||
-                    "https://github.com/login/oauth/authorize?client_id=Ov23liGnvXbFkUAOcQ3l&redirect_uri=https://sonolight.vercel.app/account/oauth-redirect/github&scope=user"
+                    "https://github.com/login/oauth/authorize?client_id=Ov23liGnvXbFkUAOcQ3l&redirect_uri=https://app.sonolight.wiki/account/oauth-redirect/github&scope=user"
                 );
             case "discord":
                 logger.debug("返回 Discord OAuth URI", JobId);
                 return (
                     process.env.DISCORD_OAUTH_URI ||
-                    "https://discord.com/oauth2/authorize?client_id=1396193252138549248&response_type=code&redirect_uri=https%3A%2F%2Fsonolight.vercel.app%2Faccount%2Foauth-redirect%2Fdiscord&scope=identify"
+                    "https://discord.com/oauth2/authorize?client_id=1396193252138549248&response_type=code&redirect_uri=https%3A%2F%2Fapp.sonolight.wiki%2Faccount%2Foauth-redirect%2Fdiscord&scope=identify"
+                );
+            case "mcjpg":
+                logger.debug("返回 MCJPG OAuth URI", JobId);
+                return (
+                    process.env.MCJPG_OAUTH_URI ||
+                    "https://sso.mcjpg.org/login/oauth/authorize?response_type=code&client_id=2e776d199dd05d8413e2&redirect_uri=https://app.sonolight.wiki/account/oauth-redirect/mcjpg&scope=openid+profile+email"
                 );
             default:
                 logger.warning(`不支持的平台: ${platform}`, JobId);

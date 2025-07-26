@@ -30,7 +30,7 @@
     });
 
     // 绑定OAuth账户
-    const bindOAuth = async (platform: "github" | "discord") => {
+    const bindOAuth = async (platform: "github" | "discord" | "mcjpg") => {
         oauthStore.setOperation(true);
         oauthStore.setAction("bind");
         try {
@@ -59,8 +59,8 @@
     };
 
     // 解绑OAuth账户
-    const ensureUnbindOAuth = async (platform: "github" | "discord") => {
-        confirm_platform.value = platform === "github" ? "GitHub" : "Discord";
+    const ensureUnbindOAuth = async (platform: "github" | "discord" | "mcjpg") => {
+        confirm_platform.value = { github: "GitHub", discord: "Discord", mcjpg: "MCJPG" }[platform];
         confirm_modal.value?.show();
     };
 
@@ -75,7 +75,7 @@
             });
 
             const _u = (res as unknown as { user: IApiUserResponse }).user;
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
+            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"], _u["mcjpgUsername"]);
 
             EventBus.emit("toast:create", {
                 alertType: "success",
@@ -158,7 +158,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-base-200 transition-colors">
+                    <div class="flex items-center justify-between p-4 border rounded-lg mb-4 hover:bg-base-200 transition-colors">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full bg-[#171515]/50 flex items-center justify-center">
                                 <Icon name="octicon:mark-github-24" size="24" />
@@ -177,6 +177,28 @@
                                 class="btn btn-sm"
                                 @click="accountStore.githubUsername ? ensureUnbindOAuth('github') : bindOAuth('github')">
                                 {{ accountStore.githubUsername ? "解除绑定" : "绑定账户" }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-base-200 transition-colors">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-full bg-[#FFAC38]/50 flex items-center justify-center">
+                                <img src="https://mcjpg.org/logo.png" class="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium">MCJPG</h3>
+                                <p class="text-sm text-gray-500">
+                                    {{ accountStore.mcjpgUsername ? `已绑定 ${accountStore.mcjpgUsername}` : "未绑定" }}
+                                </p>
+                            </div>
+                        </div>
+                        <div>
+                            <button
+                                :class="accountStore.mcjpgUsername ? 'btn-error' : 'btn-success'"
+                                :disabled="oauthStore.in_operation"
+                                class="btn btn-sm"
+                                @click="accountStore.mcjpgUsername ? ensureUnbindOAuth('mcjpg') : bindOAuth('mcjpg')">
+                                {{ accountStore.mcjpgUsername ? "解除绑定" : "绑定账户" }}
                             </button>
                         </div>
                     </div>

@@ -14,6 +14,7 @@
     const mapper: Record<string, any> = {
         github: "GitHub",
         discord: "Discord",
+        mcjpg: "MCJPG 通行证",
     };
 
     onMounted(async () => {
@@ -45,7 +46,7 @@
             });
 
             const _u = res.user as IApiUserResponse;
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
+            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"], _u["mcjpgUsername"]);
 
             if (oauthStore.action === "login") {
                 navigateTo("/dashboard");
@@ -55,7 +56,7 @@
 
             EventBus.emit("toast:create", {
                 alertType: "success",
-                content: "绑定成功",
+                content: "授权成功",
             });
         } catch (err: any) {
             error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
