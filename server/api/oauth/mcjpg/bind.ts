@@ -93,10 +93,10 @@ export default defineEventHandler(async (event) => {
         logger.debug(`账户绑定检查完成: ${existingUser ? "已绑定" : "未绑定"}`, JobId);
 
         if (existingUser) {
-            logger.warning("该 MCJPG 账户已被绑定", JobId);
+            logger.warning("该 MCJPG 通行证账户已被绑定", JobId);
             throw createError({
                 statusCode: 409,
-                message: "该 MCJPG 账户已被绑定",
+                message: "该 MCJPG 通行证账户已被绑定",
                 data: { errorCode: "MCJPG_OAUTH_BIND:ALREADY_BOUND" },
             });
         }
@@ -115,12 +115,7 @@ export default defineEventHandler(async (event) => {
         }
 
         logger.trace("执行账户绑定操作", JobId);
-        const { data, error } = await supabase
-            .from("oauth")
-            .update({ mcjpgId: id, mcjpgUsername: name })
-            .eq("id", user.id)
-            .select()
-            .single();
+        const { data, error } = await supabase.from("oauth").update({ mcjpgId: id, mcjpgUsername: name }).eq("id", user.id).select().single();
         logger.debug(`账户绑定操作完成: ${error ? "失败" : "成功"}`, JobId);
 
         if (error) {
@@ -136,7 +131,7 @@ export default defineEventHandler(async (event) => {
         const { data: updatedUser_users } = await supabase.from("users").select("id, username, role").eq("id", user.id).single();
         logger.debug("更新后的用户信息获取完成", JobId);
 
-        logger.info("MCJPG 绑定请求处理完成", JobId);
+        logger.info("MCJPG 通行证绑定请求处理完成", JobId);
         return {
             message: "绑定成功",
             user: { ...updatedUser_users, ...data },

@@ -9,18 +9,17 @@ export default defineEventHandler(async (event) => {
     const JobId = logger.createJob(`API OAuth/GitHub/Login #${random(9999)}`);
     try {
         logger.info("开始处理 GitHub 登录请求", JobId);
-        
+
         logger.trace("读取请求体中的授权码", JobId);
         const { code } = await readBody(event);
-        logger.debug(`授权码读取完成: ${code ? '存在' : '不存在'}`, JobId);
+        logger.debug(`授权码读取完成: ${code ? "存在" : "不存在"}`, JobId);
 
         if (!code) {
             logger.warning("缺少授权码", JobId);
             throw createError({ statusCode: 400, message: "缺少授权码" });
         }
 
-        // 交换code获取access token
-        logger.trace("交换code获取access token", JobId);
+        logger.trace("交换 Code 获取 AccessToken", JobId);
         let tokenResponse;
         try {
             tokenResponse = await $fetch("https://github.com/login/oauth/access_token", {
@@ -57,7 +56,6 @@ export default defineEventHandler(async (event) => {
 
         const { access_token } = tokenResponse as { access_token: string };
 
-        // 获取用户信息
         logger.trace("获取 GitHub 用户信息", JobId);
         let userInfo;
         try {
@@ -88,10 +86,9 @@ export default defineEventHandler(async (event) => {
 
         const { id } = userInfo as { id: number };
 
-        // 查找GitHub ID匹配的用户
         logger.trace("查找 GitHub ID 匹配的用户", JobId);
         const { data: user_oauth } = await supabase.from("oauth").select("*").eq("githubId", id).single();
-        logger.debug(`用户查找完成: ${user_oauth ? '找到' : '未找到'}`, JobId);
+        logger.debug(`用户查找完成: ${user_oauth ? "找到" : "未找到"}`, JobId);
 
         if (!user_oauth) {
             logger.error("未找到关联账户", JobId);
@@ -104,7 +101,7 @@ export default defineEventHandler(async (event) => {
 
         logger.trace("获取用户详细信息", JobId);
         const { data: user_users } = await supabase.from("users").select("id, username, role").eq("id", user_oauth.id).single();
-        logger.debug(`用户详细信息获取完成: ${user_users ? '找到' : '未找到'}`, JobId);
+        logger.debug(`用户详细信息获取完成: ${user_users ? "找到" : "未找到"}`, JobId);
 
         if (!user_users) {
             logger.error("未找到关联账户", JobId);
@@ -115,28 +112,24 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        // 生成JWT token
-        logger.trace("生成 JWT token", JobId);
+        logger.trace("生成 AccessToken", JobId);
         const accessToken = await new SignJWT({ id: user_users.id, role: user_users.role })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("15m")
             .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
-        logger.debug("JWT token 生成成功", JobId);
+        logger.debug("AccessToken 生成成功", JobId);
 
-        // 生成refresh token
-        logger.trace("生成 refresh token", JobId);
+        logger.trace("生成 RefreshToken", JobId);
         const refreshToken = await new SignJWT({ id: user_users.id })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("7d")
             .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
-        logger.debug("refresh token 生成成功", JobId);
+        logger.debug("RefreshToken 生成成功", JobId);
 
-        // 保存refresh token到数据库
-        logger.trace("保存 refresh token 到数据库", JobId);
+        logger.trace("保存 RefreshToken 到数据库", JobId);
         await supabase.from("users").update({ refreshToken }).eq("id", user_users.id);
-        logger.debug("refresh token 保存成功", JobId);
+        logger.debug("RefreshToken 保存成功", JobId);
 
-        // 设置 HTTP-only Cookie
         logger.trace("设置 HTTP-only Cookie", JobId);
         setCookie(event, "accessToken", accessToken, {
             httpOnly: true,

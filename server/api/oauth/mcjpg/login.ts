@@ -123,16 +123,16 @@ export default defineEventHandler(async (event) => {
             .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
         logger.debug("AccessToken 生成成功", JobId);
 
-        logger.trace("生成 refreshToken", JobId);
+        logger.trace("生成 RefreshToken", JobId);
         const refreshToken = await new SignJWT({ id: user_users.id })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("7d")
             .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
-        logger.debug("refresh token 生成成功", JobId);
+        logger.debug("RefreshToken 生成成功", JobId);
 
-        logger.trace("保存 refreshToken 到数据库", JobId);
+        logger.trace("保存 RefreshToken 到数据库", JobId);
         await supabase.from("users").update({ refreshToken }).eq("id", user_users.id);
-        logger.debug("refreshToken 保存成功", JobId);
+        logger.debug("RefreshToken 保存成功", JobId);
 
         logger.trace("设置 HTTP-only Cookie", JobId);
         setCookie(event, "accessToken", accessToken, {
@@ -148,7 +148,7 @@ export default defineEventHandler(async (event) => {
         });
         logger.debug("Cookie 设置完成", JobId);
 
-        logger.info("MCJPG 登录请求处理完成", JobId);
+        logger.info("MCJPG 通行证登录请求处理完成", JobId);
         return {
             message: "登录成功",
             user: {

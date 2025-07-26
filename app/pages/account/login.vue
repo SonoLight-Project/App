@@ -23,8 +23,8 @@
                 },
             });
 
-            const _u = res.user as IApiUserResponse;
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
+            const _u = (res as { message: string; user: IApiUserResponse }).user;
+            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"], _u["mcjpgUsername"]);
 
             // 跳转到面板
             await navigateTo("/dashboard");

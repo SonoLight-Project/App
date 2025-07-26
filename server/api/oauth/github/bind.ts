@@ -18,8 +18,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: "缺少授权码" });
         }
 
-        // 交换code获取access token
-        logger.trace("交换code获取access token", JobId);
+        logger.trace("交换 Code 获取 AccessToken", JobId);
         let tokenResponse;
         try {
             tokenResponse = await $fetch("https://github.com/login/oauth/access_token", {
@@ -56,7 +55,6 @@ export default defineEventHandler(async (event) => {
 
         const { access_token } = tokenResponse as { access_token: string };
 
-        // 获取用户信息
         logger.trace("获取 GitHub 用户信息", JobId);
         let userInfo;
         try {
@@ -87,7 +85,6 @@ export default defineEventHandler(async (event) => {
 
         const { id } = userInfo as { id: number };
 
-        // 检查账户是否已被绑定
         logger.trace("检查账户是否已被绑定", JobId);
         const { data: existingUser } = await supabase.from("oauth").select("*").eq("githubId", id).single();
         logger.debug(`账户绑定检查完成: ${existingUser ? "已绑定" : "未绑定"}`, JobId);
@@ -101,7 +98,6 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        // 绑定账户
         logger.trace("获取用户上下文", JobId);
         const user = event.context.auth?.user;
         logger.debug(`用户上下文获取完成: ${user ? "存在" : "不存在"}`, JobId);

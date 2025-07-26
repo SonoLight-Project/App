@@ -70,7 +70,9 @@
 <template>
     <main class="w-full h-full flex flex-col justify-center items-center gap-2">
         <div class="card bg-base-100 shadow-sm w-3/4 md:w-1/3 py-2">
-            <h2 class="text-xl mx-auto">声致发光平台 · {{ mapper[$route.params.platform as string] }} 授权</h2>
+            <h2 class="text-xl mx-auto hidden lg:block">声致发光平台 · {{ mapper[$route.params.platform as string] }} 授权</h2>
+            <h2 class="text-xl mx-auto lg:hidden">声致发光平台</h2>
+            <h2 class="text-xl mx-auto lg:hidden">{{ mapper[$route.params.platform as string] }} 授权</h2>
         </div>
 
         <div class="card bg-base-100 shadow-sm w-3/4 md:w-1/3 py-4 px-6 flex flex-col gap-4">
