@@ -11,7 +11,7 @@
         <SonoFooter/>
     </div>
     <SonoToast/>
-    <div id="layout-default" class="w-screen h-screen fixed top-0 left-0 -z-999"></div>
+    <div id="layout-default" class="w-screen h-screen fixed top-0 left-0 -z-999 pt-16"></div>
 </template>
 
 <style lang="scss">
