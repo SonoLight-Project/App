@@ -514,7 +514,7 @@ export class OptimizedUniStructSerializer {
         regionId: string,
         region: IUniStruct['regions'][string]
     ): number {
-        // --- 序列化区域头、哈夫曼树和方块数据 (这部分逻辑保持不变) ---
+
         offset = this.writeString(view, offset, regionId, true);
         view.setInt32(offset, region.position.x, true);
         view.setInt32(offset + 4, region.position.y, true);
@@ -979,7 +979,6 @@ export class OptimizedUniStructDeserializer {
         view: DataView,
         offset: number
     ): [HuffmanNode, number] {
-        // 修复1: 添加更精确的边界检查
         console.log(`Deserializing Huffman tree at offset ${offset}`);
         if (offset + 2 > view.byteLength) {
             throw new Error(`Huffman tree header out of bounds: ${offset + 2} > ${view.byteLength}`);
@@ -988,13 +987,11 @@ export class OptimizedUniStructDeserializer {
         const nodeCount = view.getUint16(offset, true);
         offset += 2;
 
-        // 修复2: 添加节点数合理性检查
         if (nodeCount === 0) {
             console.warn("Empty Huffman tree detected");
             return [new HuffmanNode("air", 1), offset];
         }
 
-        // 修复3: 添加最大深度限制
         const [node, newOffset] = this.deserializeNode(view, offset, 0, 50);
         return [node, newOffset];
     }
@@ -1006,12 +1003,11 @@ export class OptimizedUniStructDeserializer {
         maxDepth: number
     ): [HuffmanNode, number] {
         console.log(`Deserializing node at offset ${offset}, depth ${depth}`);
-        // 修复4: 添加递归深度限制
+
         if (depth > maxDepth) {
             throw new Error(`Huffman tree too deep: ${depth} > ${maxDepth}`);
         }
 
-        // 修复5: 精确到字节的边界检查
         if (offset >= view.byteLength) {
             throw new Error(`Node offset out of bounds: ${offset} >= ${view.byteLength}`);
         }
@@ -1041,7 +1037,6 @@ export class OptimizedUniStructDeserializer {
             offset = leftOffset;
             node.left = left;
 
-            // 修复6: 检查是否有右子树数据
             if (offset >= view.byteLength) {
                 console.warn("Huffman tree missing right child, using left as right");
                 node.right = null;
