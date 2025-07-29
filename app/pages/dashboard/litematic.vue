@@ -114,8 +114,8 @@ async function getFile() {
     }
 };
 
-    //const unistruct = Unistruct.fromLitematicaData(parsed.value)
-    const unistruct = new Unistruct(testStruct);
+    const unistruct = Unistruct.fromLitematicaData(parsed.value)
+    //const unistruct = new Unistruct(testStruct);
     const file = unistruct.generateFile();
     const url = URL.createObjectURL(file);
     const a = document.createElement('a');
