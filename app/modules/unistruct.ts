@@ -146,6 +146,10 @@ export class Unistruct {
         return result;
     }
 
+    /**
+     * 生成.unis格式的文件
+     * @returns {File}
+     */
     generateFile(): File {
         if (this.data === Unistruct.DEFAULT_DATA) {
             throw new Error("Empty Unistruct");
@@ -155,6 +159,11 @@ export class Unistruct {
         return file;
     }
 
+    /**
+     * 不保证a === Unistruct.fromLitematicaData(a).toLitematicaData()
+     * 只能被用于获取统计数据, 不应该被用于保存到文件
+     * @returns {ParsedLitematica}
+     */
     toLitematicaData(): ParsedLitematica {
         const result: ParsedLitematica = {
             version: 6,
