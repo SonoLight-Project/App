@@ -13,10 +13,12 @@ export default defineNuxtPlugin((nuxtApp) => {
             (p) => p.startsWith("https://"), // 外部链接 HTTPS
         ];
 
-        router.beforeEach((to, from) => {
-            if (whitelist.some((rule) => rule(to.path))) return true;
-            if (!accountStore.userId) return "/account/login";
-            return true;
+        router.beforeEach((to, from, next) => {
+            const isWhitelisted = whitelist.some((rule) => rule(to.path));
+            const isAuthenticated = !!accountStore.userId;
+
+            if (isWhitelisted || isAuthenticated) next();
+            else next("/account/login");
         });
     }
 });

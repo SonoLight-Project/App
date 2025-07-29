@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, message: "缺少授权码" });
         }
 
-        // 交换code获取access token
-        logger.trace("交换code获取access token", JobId);
+        logger.trace("交换 Code 获取 AccessToken", JobId);
         let tokenResponse;
         try {
             tokenResponse = await $fetch("https://discord.com/api/oauth2/token", {
@@ -36,7 +35,7 @@ export default defineEventHandler(async (event) => {
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
             });
-            logger.debug("access token 获取成功", JobId);
+            logger.debug("AccessToken 获取成功", JobId);
         } catch (error: any) {
             switch (error.statusCode) {
                 case 400:
@@ -116,26 +115,24 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        // 生成JWT token
-        logger.trace("生成 JWT token", JobId);
+        logger.trace("生成 AccessToken", JobId);
         const accessToken = await new SignJWT({ id: user_users.id, role: user_users.role })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("15m")
             .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
-        logger.debug("JWT token 生成成功", JobId);
+        logger.debug("AccessToken 生成成功", JobId);
 
-        // 生成refresh token
-        logger.trace("生成 refresh token", JobId);
+        logger.trace("生成 RefreshToken", JobId);
         const refreshToken = await new SignJWT({ id: user_users.id })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("7d")
             .sign(new TextEncoder().encode(process.env.JWT_REFRESH_SECRET!));
-        logger.debug("refresh token 生成成功", JobId);
+        logger.debug("RefreshToken 生成成功", JobId);
 
         // 保存refresh token到数据库
-        logger.trace("保存 refresh token 到数据库", JobId);
+        logger.trace("保存 RefreshToken 到数据库", JobId);
         await supabase.from("users").update({ refreshToken }).eq("id", user_users.id);
-        logger.debug("refresh token 保存成功", JobId);
+        logger.debug("RefreshToken 保存成功", JobId);
 
         // 设置 HTTP-only Cookie
         logger.trace("设置 HTTP-only Cookie", JobId);

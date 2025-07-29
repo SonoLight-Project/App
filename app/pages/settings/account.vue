@@ -183,7 +183,7 @@
                     <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-base-200 transition-colors">
                         <div class="flex items-center space-x-4">
                             <div class="w-12 h-12 rounded-full bg-[#FFAC38]/50 flex items-center justify-center">
-                                <img src="https://mcjpg.org/logo.png" class="w-6 h-6" />
+                                <img src="https://mcjpg.org/logo.png" class="w-7 h-7" />
                             </div>
                             <div>
                                 <h3 class="text-lg font-medium">MCJPG</h3>

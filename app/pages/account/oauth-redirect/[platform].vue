@@ -33,11 +33,7 @@
         isLoading.value = true;
 
         try {
-            // @ts-ignore
-            const res: {
-                message: string;
-                user: IApiUserResponse;
-            } = await $fetch(`/api/oauth/${platform}/${oauthStore.action}`, {
+            const res = await $fetch(`/api/oauth/${platform}/${oauthStore.action}`, {
                 method: "POST",
                 body: {
                     code,
@@ -45,7 +41,7 @@
                 },
             });
 
-            const _u = res.user as IApiUserResponse;
+            const _u = (res as { message: string; user: IApiUserResponse }).user;
             accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"], _u["mcjpgUsername"]);
 
             if (oauthStore.action === "login") {
