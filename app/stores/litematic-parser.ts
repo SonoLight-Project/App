@@ -3,7 +3,10 @@ import { defineNuxtPlugin } from '#app'
 import pako from 'pako'
 import { Buffer } from 'buffer'
 import { parse, simplify } from 'prismarine-nbt'
-import type { IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
+import type { IUniEntity, IUniTileEntity, IUniStruct } from '~/types/unistruct/unistruct'
+import nbt from 'prismarine-nbt';
+import type { NBT, Long as PrismarineLong } from 'prismarine-nbt';
+import { gzip as pakoGzip } from 'pako';
 
 export interface BlockState {
     name: string
@@ -244,3 +247,178 @@ const decodeBlockStates = (
     return decodedBlocks;
 };
 
+/**
+ * 辅助函数：将 BigInt 转换为 prismarine-nbt 的 Long 格式 ([msb, lsb])
+ * @param n 要转换的 BigInt
+ * @returns 一个包含两个32位整数的数组
+ */
+function bigIntToPrismarineLong(n: bigint): [number, number] {
+    const lsb = Number(n & 0xFFFFFFFFn);
+    const msb = Number(n >> 32n);
+    return [msb, lsb];
+}
+
+/**
+ * 将 IUniStruct 对象转换为 .litematic 文件格式的 Buffer，使用 prismarine-nbt。
+ * @param uniStruct 要转换的 universal structure 对象
+ * @returns 一个 Promise，解析为包含 .litematic 文件数据的 Buffer
+ */
+export function convertUniStructToLitematic(uniStruct: IUniStruct): Buffer {
+    const litematicRegions: Record<string, any> = {};
+
+    // 遍历所有区域并进行转换
+    for (const regionName in uniStruct.regions) {
+        const uniRegion = uniStruct.regions[regionName]!;
+        const size = uniRegion.size;
+        const position = uniRegion.position;
+
+        // --- 1. 创建方块调色板 (Palette) 和索引数组 ---
+        const palette: any[] = []; // prismarine-nbt 使用普通对象
+        const blockStateMap = new Map<string, number>();
+        const blockStateIndices: number[] = new Array(size.x * size.y * size.z);
+        let paletteIndexCounter = 0;
+
+        for (let y = 0; y < size.y; y++) {
+            for (let z = 0; z < size.z; z++) {
+                for (let x = 0; x < size.x; x++) {
+                    const block = uniRegion.blocks[y]![x]![z]!;
+                    const propertiesString = block.properties
+                        ? `[${Object.entries(block.properties).map(([k, v]) => `${k}=${v}`).join(',')}]`
+                        : '';
+                    const blockStateKey = `${block.name}${propertiesString}`;
+
+                    let paletteIndex = blockStateMap.get(blockStateKey);
+
+                    if (paletteIndex === undefined) {
+                        paletteIndex = paletteIndexCounter++;
+                        blockStateMap.set(blockStateKey, paletteIndex);
+                        
+                        const nbtProperties: Record<string, any> = {};
+                        if (block.properties) {
+                            for(const propKey in block.properties) {
+                                nbtProperties[propKey] = { type: 'string', value: String(block.properties[propKey]) };
+                            }
+                        }
+
+                        palette.push({
+                            type: 'compound',
+                            value: {
+                                Name: { type: 'string', value: block.name },
+                                Properties: { type: 'compound', value: nbtProperties },
+                            }
+                        });
+                    }
+
+                    const arrayIndex = (y * size.z + z) * size.x + x;
+                    blockStateIndices[arrayIndex] = paletteIndex;
+                }
+            }
+        }
+
+        // --- 2. 将索引数组打包成 Long Array ---
+        const paletteSize = palette.length;
+        const bitsPerBlock = Math.max(2, Math.ceil(Math.log2(paletteSize)));
+        const packedStates: [number, number][] = [];
+
+        let currentLong = 0n;
+        let bitIndex = 0;
+
+        for(let i = 0; i < blockStateIndices.length; i++) {
+            const index = BigInt(blockStateIndices[i]!);
+            currentLong |= (index << BigInt(bitIndex));
+            bitIndex += bitsPerBlock;
+
+            if(bitIndex >= 64) {
+                packedStates.push(bigIntToPrismarineLong(currentLong));
+                bitIndex -= 64;
+                currentLong = index >> BigInt(64 - (bitIndex + bitsPerBlock));
+            }
+        }
+        if(bitIndex > 0) {
+            packedStates.push(bigIntToPrismarineLong(currentLong));
+        }
+
+        // --- 3. 转换实体 (Entities) ---
+        const litematicEntities = uniRegion.entities?.map(e => ({
+            type: 'compound',
+            value: {
+                id: { type: 'string', value: e.name },
+                Pos: { type: 'list', value: { type: 'double', value: [e.position.x, e.position.y, e.position.z] } },
+                Rotation: { type: 'list', value: { type: 'float', value: [e.rotation.a, e.rotation.b] } },
+                ...e.properties
+            }
+        })) || [];
+        
+        // --- 4. 转换方块实体 (Tile Entities) ---
+        const litematicTileEntities = uniRegion.tileEntities?.map(te => ({
+            type: 'compound',
+            value: {
+                x: { type: 'int', value: te.position.x },
+                y: { type: 'int', value: te.position.y },
+                z: { type: 'int', value: te.position.z },
+                ...te.properties
+            }
+        })) || [];
+
+        // --- 5. 组合成单个区域的 NBT 数据 ---
+        litematicRegions[regionName] = {
+            type: 'compound',
+            value: {
+                Position: { type: 'compound', value: {
+                    x: { type: 'int', value: position.x },
+                    y: { type: 'int', value: position.y },
+                    z: { type: 'int', value: position.z },
+                }},
+                Size: { type: 'compound', value: {
+                    x: { type: 'int', value: size.x },
+                    y: { type: 'int', value: size.y },
+                    z: { type: 'int', value: size.z },
+                }},
+                BlockStates: { type: 'long_array', value: packedStates },
+                Palette: { type: 'list', value: { type: 'compound', value: palette } },
+                ...(litematicEntities.length > 0 && { Entities: { type: 'list', value: { type: 'compound', value: litematicEntities } } }),
+                ...(litematicTileEntities.length > 0 && { TileEntities: { type: 'list', value: { type: 'compound', value: litematicTileEntities } } }),
+            }
+        };
+    }
+    
+    // --- 6. 构建最终的 Litematic NBT 结构 ---
+    const rootNbt: NBT = {
+        type: 'compound',
+        name: '', // Root tag name must be empty for litematics
+        value: {
+            Version: { type: 'int', value: 6 },
+            MinecraftDataVersion: { type: 'int', value: uniStruct.minecraftDataVersion },
+            Metadata: {
+                type: 'compound',
+                value: {
+                    Name: { type: 'string', value: uniStruct.meta.name },
+                    Author: { type: 'string', value: uniStruct.meta.author },
+                    Description: { type: 'string', value: uniStruct.meta.description },
+                    TimeCreated: { type: 'long', value: bigIntToPrismarineLong(uniStruct.meta.createdTime) },
+                    TimeModified: { type: 'long', value: bigIntToPrismarineLong(uniStruct.meta.modifiedTime) },
+                    TotalBlocks: { type: 'int', value: uniStruct.meta.totalBlocks },
+                    TotalVolume: { type: 'int', value: uniStruct.meta.size.x * uniStruct.meta.size.y * uniStruct.meta.size.z },
+                    RegionCount: { type: 'int', value: Object.keys(litematicRegions).length },
+                    EnclosingSize: { type: 'compound', value: {
+                        x: { type: 'int', value: uniStruct.meta.size.x },
+                        y: { type: 'int', value: uniStruct.meta.size.y },
+                        z: { type: 'int', value: uniStruct.meta.size.z },
+                    }},
+                }
+            },
+            Regions: {
+                type: 'compound',
+                value: litematicRegions
+            }
+        }
+    };
+    
+    // --- 7. 序列化为 NBT 并用 GZIP 压缩 ---
+    const nbtBuffer = nbt.writeUncompressed(rootNbt, 'big');
+    const nbtUint8Array = new Uint8Array(nbtBuffer.buffer, nbtBuffer.byteOffset, nbtBuffer.byteLength);
+    const gzippedUint8Array = pakoGzip(nbtUint8Array);
+    
+    // pako 返回一个 Uint8Array, 我们需要将其转换为 Node.js Buffer 以便写入文件
+    return Buffer.from(gzippedUint8Array);
+}

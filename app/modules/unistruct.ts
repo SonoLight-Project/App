@@ -1,9 +1,6 @@
 import type { IUniStructMeta, IUniBlock, IUniStruct, IUniStructRaw, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
-import { parseLitematica } from '~/stores/litematic-parser';
+import { parseLitematica, convertUniStructToLitematic } from '~/stores/litematic-parser';
 import type { ParsedLitematica } from '~/stores/litematic-parser';
-import Bitmap from './bitmap';
-import BitmapMap from './bitmap-map';
-import { toHandlerKey } from 'vue';
 /**
 文件头   
 0        4        5        6        8                                   12  
@@ -122,7 +119,7 @@ export class Unistruct {
     }
 
     static async fromUnistructFile(file: File): Promise<Unistruct> {
-        const result = OptimizedUniStructDeserializer.deserialize(await file.arrayBuffer());
+        const result = UniStructDeserializer.deserialize(await file.arrayBuffer());
         return new Unistruct(result);
     }
 
@@ -154,17 +151,21 @@ export class Unistruct {
         if (this.data === Unistruct.DEFAULT_DATA) {
             throw new Error("Empty Unistruct");
         }
-        const buffer = OptimizedUniStructSerializer.serialize(this.data);
+        const buffer = UniStructSerializer.serialize(this.data);
         const file = new File([buffer], `${this.data.meta.name}.unis`, { type: 'application/octet-stream' });
         return file;
     }
 
     /**
-     * 不保证a === Unistruct.fromLitematicaData(a).toLitematicaData()
-     * 只能被用于获取统计数据, 不应该被用于保存到文件
+     * 修正: 不应该被使用
+     * @unimplemented
+     * @deprecated 尚未完整实现功能   
+     * 不保证a === Unistruct.fromLitematicaData(a).toLitematicaData()  
+     * 只能被用于获取部分统计数据, 不应该被用于保存到文件   
      * @returns {ParsedLitematica}
      */
     toLitematicaData(): ParsedLitematica {
+        console.warn("toLitematicaData() 尚未完整实现")
         const result: ParsedLitematica = {
             version: 6,
             minecraftDataVersion: this.data.minecraftDataVersion,
@@ -182,6 +183,19 @@ export class Unistruct {
             };
         }
         return result;
+    }
+
+    /**
+     * 转换为用于储存或使用的file对象, 
+     * 元数据意义上, 保证 a === Unistruct.fromLitematicaFile().toLitematicaFile()
+     * 不保证hash一样, 因为转换可能改变调色板顺序
+     * @returns {File}
+     */
+    toLitematicaFile(): File {
+        const litematicBuffer = convertUniStructToLitematic(this.data);
+        const litematicArrayBuffer = new ArrayBuffer(litematicBuffer.byteLength);
+        const file = new File([litematicArrayBuffer], `${this.data.meta.name}.litematica`, { type: 'application/octet-stream' });
+        return file;
     }
 
 }
@@ -219,7 +233,7 @@ interface RegionData {
 }
 
 // 高效二进制序列化器
-export class OptimizedUniStructSerializer {
+export class UniStructSerializer {
     public static readonly MAGIC = 0x554E4953; // "UNIS"
     public static readonly VERSION = 1; // version 1 
     static serialize(data: IUniStruct): ArrayBuffer {
@@ -715,7 +729,7 @@ export class OptimizedUniStructSerializer {
 
 
 // 反序列化器
-export class OptimizedUniStructDeserializer {
+export class UniStructDeserializer {
     static deserialize(buffer: ArrayBuffer): IUniStruct {
         const view = new DataView(buffer);
         let offset = 0;
@@ -723,7 +737,7 @@ export class OptimizedUniStructDeserializer {
         try {
             // 读取文件头
             const magic = view.getUint32(offset);
-            if (magic !== OptimizedUniStructSerializer.MAGIC) {
+            if (magic !== UniStructSerializer.MAGIC) {
                 throw new Error('Invalid file format: Magic number mismatch');
             }
 
@@ -1145,7 +1159,7 @@ export class OptimizedUniStructDeserializer {
                         }
 
                         const blockKey = currentNode.symbol;
-                        const block = OptimizedUniStructDeserializer.getBlockFromKey(blockKey);
+                        const block = UniStructDeserializer.getBlockFromKey(blockKey);
 
                         if (block) {
                             blocks[yIdx]![zIdx]![xIdx] = block;
