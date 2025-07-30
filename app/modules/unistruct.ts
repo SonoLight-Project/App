@@ -1,6 +1,7 @@
 import type { IUniStructMeta, IUniBlock, IUniStruct, IUniStructRaw, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
 import { parseLitematica, convertUniStructToLitematic } from '~/stores/litematic-parser';
 import type { ParsedLitematica } from '~/stores/litematic-parser';
+import { gzip, ungzip } from 'pako';
 /**
 文件头   
 0        4        5        6        8                                   12  
@@ -112,14 +113,67 @@ export class Unistruct {
     }
 
     public data: IUniStruct;
+    public stats: {
+        useBlock: Map<string, number>,
+        useEntity: Map<string, number>,
+        useItem: Map<string, number>,
+    };
 
 
-    constructor(data?: IUniStruct) {
+    constructor(data?: IUniStruct, opt?: string[]) {
         this.data = data ?? Unistruct.DEFAULT_DATA;
+        this.stats = { useBlock: new Map(), useEntity: new Map(), useItem: new Map() }
+
+        if (!opt?.includes('no-stats')) {
+            for (const regionName in this.data.regions) {
+                const region = this.data.regions[regionName]!;
+                region.blocks.forEach(row => {
+                    row.forEach(col => {
+                        col.forEach(block => {
+                            this.stats.useBlock.set(block.name, (this.stats.useBlock.get(block.name) ?? 0) + 1);
+                        })
+                    })
+                })
+
+                if (region.entities) {
+                    region.entities.forEach(entity => {
+                        this.stats.useEntity.set(entity.name, (this.stats.useEntity.get(entity.name) ?? 0) + 1);
+                    })
+                }
+
+                if (region.tileEntities) {
+                    region.tileEntities.forEach(tileEntity => {
+                        if(tileEntity.properties && tileEntity.properties.Items) {
+                            const items = tileEntity.properties.Items;
+                            if(Array.isArray(items)) {
+                                items.forEach(item => {
+                                    this.stats.useItem.set(item.id, (this.stats.useItem.get(item.id) ?? 0) + item.Count || 1);
+                                })
+                            }
+                        }
+                    })
+                }
+
+            }
+
+        }
     }
 
     static async fromUnistructFile(file: File): Promise<Unistruct> {
-        const result = UniStructDeserializer.deserialize(await file.arrayBuffer());
+        const buffer = await file.arrayBuffer();
+        const view = new DataView(buffer);
+        // Check if file is gzipped (magic numbers 0x1f 0x8b)
+        const isGzipped = view.byteLength >= 2 && view.getUint8(0) === 0x1f && view.getUint8(1) === 0x8b;
+
+        const dataBuffer = isGzipped
+            ? ungzip(buffer).buffer
+            : buffer;
+
+        const dataUint8 = new Uint8Array(dataBuffer);
+
+        const result = UniStructDeserializer.deserialize(
+            dataUint8.buffer.slice(dataUint8.byteOffset, dataUint8.byteLength + dataUint8.byteOffset) as ArrayBuffer
+        );
         return new Unistruct(result);
     }
 
@@ -151,39 +205,71 @@ export class Unistruct {
         if (this.data === Unistruct.DEFAULT_DATA) {
             throw new Error("Empty Unistruct");
         }
-        const buffer = UniStructSerializer.serialize(this.data);
-        const file = new File([buffer], `${this.data.meta.name}.unis`, { type: 'application/octet-stream' });
+        const buffer = (gzip(UniStructSerializer.serialize(this.data)));
+        const file = new File([buffer.buffer.slice(buffer.byteOffset, buffer.byteLength + buffer.byteOffset) as ArrayBuffer], `${this.data.meta.name}.unis`, { type: 'application/octet-stream' });
         return file;
     }
 
     /**
-     * 修正: 不应该被使用
-     * @unimplemented
-     * @deprecated 尚未完整实现功能   
-     * 不保证a === Unistruct.fromLitematicaData(a).toLitematicaData()  
-     * 只能被用于获取部分统计数据, 不应该被用于保存到文件   
+     * 元数据意义上保证 a === Unistruct.fromLitematicaData(a).toLitematicaData()  
+     * 
      * @returns {ParsedLitematica}
      */
     toLitematicaData(): ParsedLitematica {
-        console.warn("toLitematicaData() 尚未完整实现")
-        const result: ParsedLitematica = {
+        const uniStruct = this.data;
+
+        const litematicaData: ParsedLitematica = {
+            minecraftDataVersion: uniStruct.minecraftDataVersion,
+            // Litematic 文件格式版本, 对于 1.13+ 通常是 6
             version: 6,
-            minecraftDataVersion: this.data.minecraftDataVersion,
-            metadata: this.data.meta,
-            regions: {}
+            metadata: uniStruct.meta,
+            regions: {},
         };
-        for (const [regionId, region] of Object.entries(this.data.regions)) {
-            result.regions[regionId] = {
-                position: region.position,
-                size: region.size,
-                palette: [],
-                blocks: region.blocks,
-                entities: region.entities ?? [],
-                tileEntities: region.tileEntities ?? []
-            };
+
+        // 遍历所有区域并进行转换
+        for (const regionName in uniStruct.regions) {
+            if (Object.prototype.hasOwnProperty.call(uniStruct.regions, regionName)) {
+                const uniRegion = uniStruct.regions[regionName]!;
+
+                // 使用 Map 来高效地收集所有不重复的方块状态以生成调色板 (palette)
+                const uniqueBlocks = new Map<string, BlockState>();
+
+                // 遍历三维方块数组来填充 Map
+                for (let x = 0; x < uniRegion.size.x; x++) {
+                    for (let y = 0; y < uniRegion.size.y; y++) {
+                        for (let z = 0; z < uniRegion.size.z; z++) {
+                            const block = uniRegion.blocks[x]![y]![z]!;
+                            // 使用 JSON 字符串作为 Map 的键来判断唯一性
+                            const key = JSON.stringify(block);
+                            if (!uniqueBlocks.has(key)) {
+                                uniqueBlocks.set(key, block);
+                            }
+                        }
+                    }
+                }
+
+                // 从 Map 的值创建调色板数组
+                const palette = Array.from(uniqueBlocks.values());
+
+                // 构建 litematica 区域对象
+                const litematicaRegion = {
+                    position: uniRegion.position,
+                    size: uniRegion.size,
+                    palette: palette,
+                    // 由于 IUniBlock 和 BlockState 结构相同, 可以直接赋值
+                    blocks: uniRegion.blocks,
+                    // 如果存在 entities 和 tileEntities，则复制它们
+                    ...(uniRegion.entities && { entities: uniRegion.entities }),
+                    ...(uniRegion.tileEntities && { tileEntities: uniRegion.tileEntities }),
+                };
+
+                litematicaData.regions[regionName] = litematicaRegion;
+            }
         }
-        return result;
+
+        return litematicaData;
     }
+
 
     /**
      * 转换为用于储存或使用的file对象, 
@@ -193,8 +279,11 @@ export class Unistruct {
      */
     toLitematicaFile(): File {
         const litematicBuffer = convertUniStructToLitematic(this.data);
-        const litematicArrayBuffer = new ArrayBuffer(litematicBuffer.byteLength);
-        const file = new File([litematicArrayBuffer], `${this.data.meta.name}.litematica`, { type: 'application/octet-stream' });
+        const file = new File(
+            [litematicBuffer.buffer.slice(litematicBuffer.byteOffset, litematicBuffer.byteLength + litematicBuffer.byteOffset) as ArrayBuffer],
+            `${this.data.meta.name}.litematica`,
+            { type: 'application/octet-stream' }
+        );
         return file;
     }
 
@@ -556,7 +645,7 @@ export class UniStructSerializer {
 
         offset = this.serializeTileEntities(view, offset, region.tileEntities);
         offset = this.serializeEntities(view, offset, region.entities);
-        
+
 
         return offset;
     }
@@ -847,10 +936,10 @@ export class UniStructDeserializer {
                 throw new Error(`Region position out of bounds`);
             }
 
-            const position = { 
-                x: view.getInt32(offset, true), 
-                y: view.getInt32(offset + 4, true), 
-                z: view.getInt32(offset + 8, true) 
+            const position = {
+                x: view.getInt32(offset, true),
+                y: view.getInt32(offset + 4, true),
+                z: view.getInt32(offset + 8, true)
             };
             offset += 12;
 
@@ -858,10 +947,10 @@ export class UniStructDeserializer {
                 throw new Error(`Region size out of bounds`);
             }
 
-            const size = { 
-                x: view.getInt32(offset, true), 
-                y: view.getInt32(offset + 4, true), 
-                z: view.getInt32(offset + 8, true) 
+            const size = {
+                x: view.getInt32(offset, true),
+                y: view.getInt32(offset + 4, true),
+                z: view.getInt32(offset + 8, true)
             };
             offset += 12;
 
@@ -905,9 +994,9 @@ export class UniStructDeserializer {
                 size,
                 position,
                 tileEntities,
-                entities      
+                entities
             };
-            
+
             return [regionId, regionData, offset];
         } catch (error) {
             console.error("Region deserialization failed:", error);
@@ -936,7 +1025,7 @@ export class UniStructDeserializer {
             // 读取属性JSON字符串
             const [propertiesJson, propOffset] = this.readString(view, offset, false); // 使用4字节长度
             offset = propOffset;
-            
+
             // 解析JSON
             const properties = JSON.parse(propertiesJson);
             tileEntities.push({ position, properties });
@@ -972,7 +1061,7 @@ export class UniStructDeserializer {
             // 读取属性JSON字符串
             const [propertiesJson, propOffset] = this.readString(view, offset, false); // 使用4字节长度
             offset = propOffset;
-            
+
             // 解析JSON
             const properties = JSON.parse(propertiesJson);
             entities.push({ name, position, rotation, properties });
@@ -1090,15 +1179,15 @@ export class UniStructDeserializer {
             length = view.getUint32(offset, true);
             offset += 4;
         }
-        
+
         if (offset + length > view.byteLength) {
             throw new Error(`Buffer underflow reading string data. Expected ${length} bytes, but only ${view.byteLength - offset} available.`);
         }
-        
+
         // 从buffer中创建一个子视图进行解码，更高效
         const stringBytes = new Uint8Array(view.buffer, view.byteOffset + offset, length);
         const str = decoder.decode(stringBytes);
-        
+
         return [str, offset + length];
     }
 
