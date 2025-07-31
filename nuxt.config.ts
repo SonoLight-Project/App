@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     vite: {
         plugins: [tailwindcss()],
         define: {
-            global: {},
+            'global': 'globalThis',
         },
         resolve: {
             alias: {

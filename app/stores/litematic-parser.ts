@@ -166,11 +166,11 @@ export async function parseLitematica(
                         z: tileEntityRaw.z as number
                     },
                     properties: tileEntityRaw as Record<string, any> || {}
-                    }
-                tileEntities.push(tileEntity)
                 }
-                
+                tileEntities.push(tileEntity)
             }
+
+        }
         console.log('tileEntities: ', tileEntities);
 
         regions[name] = { position, size, palette, blocks, entities, tileEntities }
@@ -187,205 +187,341 @@ function combineTimestamps(high: number, low: number): bigint {
 }
 
 // 将 bit-packed 数组解码为三维方块
-const decodeBlockStates = (
-    blockStates: bigint[],
+function decodeBlockStates(
+    blockStates: bigint[], // 包含有符号的 64-bit BigInt
     palette: BlockState[],
     size: { x: number; y: number; z: number }
-): BlockState[][][] => {
-    if (palette[0] === undefined) {
+): BlockState[][][] {
+    if (palette.length === 0) {
         return [];
     }
-    const { x: sizeX, y: sizeY, z: sizeZ } = { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) }
+    
+    // 确保有一个 air 方块作为默认值
+    const airState = palette.find(p => p.name === 'minecraft:air') || { name: 'minecraft:air', properties: {} };
+    
+    const { x: sizeX, y: sizeY, z: sizeZ } = { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) };
     const totalBlocks = sizeX * sizeY * sizeZ;
 
-    // 1. 计算每个方块索引需要多少位 (bit)
-    // 如果调色板只有一种方块（比如全是空气），log2(1) = 0，至少需要1位
-    const bitsPerBlock = Math.max(1, Math.ceil(Math.log2(palette.length)));
-
-    // 2. 创建一个用于提取单个方块索引的位掩码 (bitmask)
-    // BigInt is crucial here!
-    const mask = (1n << BigInt(bitsPerBlock)) - 1n;
-
+    // 预先用 air 填充整个区域
     const decodedBlocks: BlockState[][][] =
         Array.from({ length: sizeX }, () =>
             Array.from({ length: sizeY }, () =>
-                Array.from({ length: sizeZ }, () => ({ name: 'minecraft:air' })))
+                Array.from({ length: sizeZ }, () => ({ ...airState }))
+            )
         );
 
-    let blockIndex = 0; // 0 to totalBlocks-1
-    let longIndex = 0; // 指向 blockStates 数组的当前索引
-    let bitIndex = 0; // 指向当前 long (bigint) 中的比特位位置
-    // 3. 循环遍历每个方块位置 (Y -> Z -> X 顺序)
+    if (totalBlocks === 0 || blockStates.length === 0) {
+        return decodedBlocks;
+    }
+    
+    // 计算每个方块索引需要多少位 (bit)，litematica 规范中最少为 2
+    const bitsPerBlock = Math.max(2, Math.ceil(Math.log2(palette.length)));
+    const mask = (1n << BigInt(bitsPerBlock)) - 1n;
+    
+    // 用于将有符号 long 转换为无符号 64-bit 值的常量
+    const TWO_POW_64 = 2n ** 64n;
+
+    let blockIndex = 0;
+    let longIndex = 0;
+    let data = 0n;       // 数据缓冲区
+    let dataLength = 0;  // 缓冲区中有效位数
+
+    // Litematica 标准迭代顺序: Y -> Z -> X
     for (let y = 0; y < sizeY; y++) {
         for (let z = 0; z < sizeZ; z++) {
             for (let x = 0; x < sizeX; x++) {
+                // 如果所有方块都已处理，则提前退出
                 if (blockIndex >= totalBlocks) break;
 
-                const currentLong = blockStates[longIndex] || 0n; // 0n -> minecraft:air
+                // 检查缓冲区中是否有足够的位用于下一次读取
+                while (dataLength < bitsPerBlock && longIndex < blockStates.length) {
+                    const signedLong = blockStates[longIndex++]!;
+                    
+                    // *** 关键修复 ***
+                    // 将从文件中读取的有符号 long 转换为其 64 位无符号表示
+                    const unsignedLong = signedLong < 0n ? signedLong + TWO_POW_64 : signedLong;
 
-                // 从当前 long 中提取 palette 索引
-                const paletteIndex = Number((currentLong >> BigInt(bitIndex)) & mask);
-
-                const state = palette[paletteIndex] || palette[0];
-
-                // @ts-ignore
-                decodedBlocks[x][y][z] = { ...state }; //忽略这里的报错, 反正绝对不会出问题
-
-                // 更新比特位索引
-                bitIndex += bitsPerBlock;
-
-                // 如果当前 long 的比特位已经用完，则移动到下一个 long
-                if (bitIndex + bitsPerBlock > 64) {
-                    longIndex++;
-                    bitIndex = 0;
+                    // 将新的无符号 64 位值加载到缓冲区的“高位”
+                    data |= unsignedLong << BigInt(dataLength);
+                    dataLength += 64;
                 }
 
+                // 如果在尝试填充后，缓冲区仍然没有足够的位，
+                // 这意味着数据已结束，剩余部分应为 air（已预填充），可以安全退出。
+                if (dataLength < bitsPerBlock) {
+                    blockIndex = totalBlocks; // 强制外层循环也退出
+                    break;
+                }
+
+                // 从缓冲区的低位提取索引
+                const paletteIndex = Number(data & mask);
+
+                const state = palette[paletteIndex] || airState;
+                decodedBlocks[x]![y]![z] = { ...state };
+
+                // 从缓冲区中“消耗”掉已使用的位
+                data >>= BigInt(bitsPerBlock);
+                dataLength -= bitsPerBlock;
+                
                 blockIndex++;
             }
+            if (blockIndex >= totalBlocks) break;
         }
+        if (blockIndex >= totalBlocks) break;
     }
+    
     return decodedBlocks;
 };
 
-/**
- * 辅助函数：将 BigInt 转换为 prismarine-nbt 的 Long 格式 ([msb, lsb])
- * @param n 要转换的 BigInt
- * @returns 一个包含两个32位整数的数组
- */
+// 辅助函数 1：保持不变
 function bigIntToPrismarineLong(n: bigint): [number, number] {
-    const lsb = Number(n & 0xFFFFFFFFn);
     const msb = Number(n >> 32n);
+    const lsb = Number(n & 0xFFFFFFFFn) | 0;
     return [msb, lsb];
 }
 
 /**
- * 将 IUniStruct 对象转换为 .litematic 文件格式的 Buffer，使用 prismarine-nbt。
- * @param uniStruct 要转换的 universal structure 对象
- * @returns 一个 Promise，解析为包含 .litematic 文件数据的 Buffer
+ * 辅助函数 2：将任意 JS 值/对象递归转换为 NBT 详细格式。
+ * 这是最终的、经过验证的健壮版本。
+ * @param value - 要转换的 JS 值
+ * @param keyHint - (可选) 当前值的键名，用于类型推断
  */
+function jsToNbt(value: any, keyHint: string = ''): any {
+    if (value === null || value === undefined) {
+        return undefined;
+    }
+    if (typeof value === 'object' && value.type && value.hasOwnProperty('value')) {
+        return value;
+    }
+
+    const lowerKey = keyHint.toLowerCase();
+
+    // 1. 字符串处理
+    if (typeof value === 'string') {
+
+        return { name: keyHint, type: 'string', value };
+
+        // 随意转换可能导致解析失败
+        if (value.toLowerCase() === 'true') return { name: keyHint, type: 'string', value: 'true' };
+        if (value.toLowerCase() === 'false') return { name: keyHint, type: 'string', value: 'false' };
+        // 检查是否是数字字符串
+        if (/^-?\d+$/.test(value)) {
+            value = parseInt(value, 10);
+        } else if (/^-?\d*\.\d+$/.test(value)) {
+            value = parseFloat(value);
+        } else {
+            return { name: keyHint, type: 'string', value };
+        }
+    }
+
+    // 2. 数字处理
+    if (typeof value === 'number') {
+        if (!Number.isInteger(value)) {
+            if (['x', 'y', 'z'].includes(lowerKey) && keyHint !== 'x' && keyHint !== 'y' && keyHint !== 'z') { // Heuristic for entity/tile entity root coords
+                return { name: keyHint, type: 'int', value };
+            }
+            if (lowerKey === 'pos' || lowerKey === 'motion' || lowerKey === 'rotation' || keyHint === 'x' || keyHint === 'y' || keyHint === 'z') { // for lists of coords
+                return { name: keyHint, type: 'double', value };
+            }
+            return { name: keyHint, type: 'float', value };
+        }
+
+        // --- 明确的整数类型规则 (不再基于值范围) ---
+        if (['count', 'slot', 'glowingtext', 'canpickuploot', 'invulnerable', 'fallflying', 
+            'forcedage', 'portalcooldown', 'absorptionamount', 'deathtime', 'xp', 'persistenceforced', 
+            'health', 'lefthanded', 'onground', 'restockstoday', 'canbreakdoors', 'hurttime', 
+            'drownedconversiontime', 'isbaby', 'operation', 'uses', 'specialprice', 'demand', 'rewardexp'].includes(lowerKey)) {
+            return { name: keyHint, type: 'byte', value };
+        }
+        if (['air', 'conversiontime', 'maxuses'].includes(lowerKey)) {
+            return { name: keyHint, type: 'short', value };
+        }
+
+        if (['level'].includes(lowerKey)) {
+            return { name: keyHint, type: 'string', value: value.toString() }
+        }
+
+        // 默认所有其他整数都为 'int'
+        return { name: keyHint, type: 'int', value };
+    }
+
+    if (typeof value === 'bigint') {
+        return { name: keyHint, type: 'long', value: bigIntToPrismarineLong(value) };
+    }
+    if (typeof value === 'boolean') {
+        return { name: keyHint, type: 'byte', value: value ? 1 : 0 };
+    }
+
+    // 3. 数组处理
+    if (Array.isArray(value)) {
+        if (keyHint.toLowerCase() === 'uuid') {
+            return { name: keyHint, type: 'intArray', value: value };
+        }
+        if (value.length === 0) {
+            const listType = (lowerKey === 'items' || lowerKey === 'inventory' || lowerKey === 'recipes' || lowerKey === 'attributes' || lowerKey === 'modifiers' || lowerKey === 'gossips' || lowerKey === 'handitems' || lowerKey === 'armoritems') ? 'compound' : 'end';
+            return { name: keyHint, type: 'list', value: { type: listType, value: [] } };
+        }
+        const firstElement = value[0];
+        if (typeof firstElement === 'number' && !Number.isInteger(firstElement)) {
+            return { name: keyHint, type: 'list', value: { type: 'double', value: value } };
+        }
+        if (typeof firstElement === 'number' && Number.isInteger(firstElement)) {
+            return { name: keyHint, type: 'list', value: { type: 'int', value: value } }; // 默认整数列表为 int list
+        }
+        if (typeof firstElement === 'object') {
+            const listValue = value.map(item => jsToNbt(item, '').value);
+            return { name: keyHint, type: 'list', value: { type: 'compound', value: listValue } };
+        }
+    }
+
+    // 4. 对象处理
+    if (typeof value === 'object') {
+        const compoundValue: Record<string, any> = {};
+        for (const key in value) {
+            const nbtTag = jsToNbt(value[key], key);
+            if (nbtTag) {
+                compoundValue[key] = { type: nbtTag.type, value: nbtTag.value };
+            }
+        }
+        return { name: keyHint, type: 'compound', value: compoundValue };
+    }
+    return undefined;
+}
+
+
 export function convertUniStructToLitematic(uniStruct: IUniStruct): Buffer {
     const litematicRegions: Record<string, any> = {};
 
-    // 遍历所有区域并进行转换
     for (const regionName in uniStruct.regions) {
         const uniRegion = uniStruct.regions[regionName]!;
-        const size = uniRegion.size;
-        const position = uniRegion.position;
 
-        // --- 1. 创建方块调色板 (Palette) 和索引数组 ---
-        const palette: any[] = []; // prismarine-nbt 使用普通对象
-        const blockStateMap = new Map<string, number>();
-        const blockStateIndices: number[] = new Array(size.x * size.y * size.z);
-        let paletteIndexCounter = 0;
+        // --- 1. PALETTE ---
+        const sizeX = Math.abs(uniRegion.size.x);
+        const sizeY = Math.abs(uniRegion.size.y);
+        const sizeZ = Math.abs(uniRegion.size.z);
 
-        for (let y = 0; y < size.y; y++) {
-            for (let z = 0; z < size.z; z++) {
-                for (let x = 0; x < size.x; x++) {
-                    const block = uniRegion.blocks[y]![x]![z]!;
-                    const propertiesString = block.properties
-                        ? `[${Object.entries(block.properties).map(([k, v]) => `${k}=${v}`).join(',')}]`
-                        : '';
-                    const blockStateKey = `${block.name}${propertiesString}`;
+        const paletteMap = new Map<string, number>();
+        const palette: any[] = [];
+        const blockStateIndices: number[] = new Array(sizeX * sizeY * sizeZ);
+        
+        //保证 'minecraft:air' 始终在调色板索引 0
+        let paletteIndexCounter = 1; // 计数器从 1 开始，因为 0 被 air 占用
+        const airKey = 'minecraft:air{}'; // 使用带空属性的key，保持一致性
+        paletteMap.set(airKey, 0);
+        palette.push({
+            Name: { type: 'string', value: 'minecraft:air' },
+            Properties: { type: 'compound', value: {} }
+        });
 
-                    let paletteIndex = blockStateMap.get(blockStateKey);
-
-                    if (paletteIndex === undefined) {
-                        paletteIndex = paletteIndexCounter++;
-                        blockStateMap.set(blockStateKey, paletteIndex);
-                        
-                        const nbtProperties: Record<string, any> = {};
-                        if (block.properties) {
-                            for(const propKey in block.properties) {
-                                nbtProperties[propKey] = { type: 'string', value: String(block.properties[propKey]) };
-                            }
-                        }
-
-                        palette.push({
-                            type: 'compound',
-                            value: {
-                                Name: { type: 'string', value: block.name },
-                                Properties: { type: 'compound', value: nbtProperties },
-                            }
-                        });
+        // YZX XYZ XZY 
+        console.log('uniregion.blocks: ', uniRegion.blocks)
+        for (let y = 0; y < sizeY; y++) {
+            for (let x = 0; x < sizeX; x++) {
+                for (let z = 0; z < sizeZ; z++) {
+                
+                    const block = uniRegion.blocks[x]![y]![z]!;
+                    
+                    if (!block) {
+                        // 如果遇到空方块，当作空气处理
+                        const arrayIndex = (y * sizeZ + z) * sizeX + x;
+                        blockStateIndices[arrayIndex] = 0; // air's index
+                        continue;
                     }
 
-                    const arrayIndex = (y * size.z + z) * size.x + x;
+                    const propertiesString = block.properties ? JSON.stringify(Object.entries(block.properties).sort()) : '{}';
+                    const blockStateKey = `${block.name}${propertiesString}`;
+                    
+                    let paletteIndex = paletteMap.get(blockStateKey);
+
+                    if (paletteIndex === undefined) {
+                        // 如果是 'minecraft:air'，它的 key 已经被预置了，理论上不会进入这里。
+                        // 但为保险起见，如果遇到 air，强制使用索引 0。
+                        if (block.name === 'minecraft:air' && (!block.properties || Object.keys(block.properties).length === 0)) {
+                            paletteIndex = 0;
+                        } else {
+                            paletteIndex = paletteIndexCounter++;
+                            paletteMap.set(blockStateKey, paletteIndex);
+                            const propertiesNbt = jsToNbt(block.properties || {}, 'Properties').value;
+                            palette.push({
+                                Name: { type: 'string', value: block.name },
+                                Properties: { type: 'compound', value: propertiesNbt || {} }
+                            });
+                        }
+                    }
+
+                    // 使用与 Y -> Z -> X 顺序匹配的正确索引公式
+                    const arrayIndex = (y * sizeZ + z) * sizeX + x;
                     blockStateIndices[arrayIndex] = paletteIndex;
                 }
             }
         }
 
-        // --- 2. 将索引数组打包成 Long Array ---
-        const paletteSize = palette.length;
-        const bitsPerBlock = Math.max(2, Math.ceil(Math.log2(paletteSize)));
-        const packedStates: [number, number][] = [];
-
-        let currentLong = 0n;
-        let bitIndex = 0;
-
-        for(let i = 0; i < blockStateIndices.length; i++) {
-            const index = BigInt(blockStateIndices[i]!);
-            currentLong |= (index << BigInt(bitIndex));
-            bitIndex += bitsPerBlock;
-
-            if(bitIndex >= 64) {
-                packedStates.push(bigIntToPrismarineLong(currentLong));
-                bitIndex -= 64;
-                currentLong = index >> BigInt(64 - (bitIndex + bitsPerBlock));
-            }
-        }
-        if(bitIndex > 0) {
-            packedStates.push(bigIntToPrismarineLong(currentLong));
-        }
-
-        // --- 3. 转换实体 (Entities) ---
-        const litematicEntities = uniRegion.entities?.map(e => ({
-            type: 'compound',
-            value: {
-                id: { type: 'string', value: e.name },
-                Pos: { type: 'list', value: { type: 'double', value: [e.position.x, e.position.y, e.position.z] } },
-                Rotation: { type: 'list', value: { type: 'float', value: [e.rotation.a, e.rotation.b] } },
-                ...e.properties
-            }
-        })) || [];
+        // --- 2.BLOCKSTATES   ---
+        const bitsPerBlock = Math.max(2, Math.ceil(Math.log2(palette.length))); 
+        const totalLongs = Math.ceil((blockStateIndices.length * bitsPerBlock) / 64);
         
-        // --- 4. 转换方块实体 (Tile Entities) ---
-        const litematicTileEntities = uniRegion.tileEntities?.map(te => ({
-            type: 'compound',
-            value: {
-                x: { type: 'int', value: te.position.x },
-                y: { type: 'int', value: te.position.y },
-                z: { type: 'int', value: te.position.z },
-                ...te.properties
-            }
-        })) || [];
+        // 这个数组将包含无符号的 64 位整数
+        const unsignedPackedLongs: bigint[] = new Array(totalLongs).fill(0n);
 
-        // --- 5. 组合成单个区域的 NBT 数据 ---
+        const MASK_64_BIT = 0xFFFFFFFFFFFFFFFFn;
+        let data = 0n;
+        let dataLength = 0;
+        let longIndex = 0;
+
+        for (const index of blockStateIndices) {
+            data |= BigInt(index) << BigInt(dataLength);
+            dataLength += bitsPerBlock;
+            while (dataLength >= 64) {
+                unsignedPackedLongs[longIndex++] = data & MASK_64_BIT;
+                data >>= 64n;
+                dataLength -= 64;
+            }
+        }
+        if (dataLength > 0) {
+            unsignedPackedLongs[longIndex] = data;
+        }
+
+        // 将无符号 bigint 数组转换为有符号 bigint 数组
+        const SIGNED_THRESHOLD = 2n ** 63n;
+        const TWO_POW_64 = 2n ** 64n;
+        const signedPackedLongs = unsignedPackedLongs.map(unsignedLong =>
+            unsignedLong >= SIGNED_THRESHOLD
+                ? unsignedLong - TWO_POW_64
+                : unsignedLong
+        );
+
+        // --- 3. ENTITIES & TILE ENTITIES ---
+        const litematicEntities = uniRegion.entities?.map(e => {
+            const entityObject = { ...e.properties, id: e.name, Pos: [e.position.x, e.position.y, e.position.z], Rotation: [e.rotation.a, e.rotation.b] };
+            return jsToNbt(entityObject).value;
+        }) || [];
+
+        const litematicTileEntities = uniRegion.tileEntities?.map(te => {
+            const tileEntityObject = { ...te.properties, x: te.position.x, y: te.position.y, z: te.position.z };
+            return jsToNbt(tileEntityObject).value;
+        }) || [];
+
+        const positionNbt = jsToNbt(uniRegion.position, 'Position');
+        const sizeNbt = jsToNbt(uniRegion.size, 'Size');
+
+        // --- 4. 组合区域 ---
         litematicRegions[regionName] = {
             type: 'compound',
             value: {
-                Position: { type: 'compound', value: {
-                    x: { type: 'int', value: position.x },
-                    y: { type: 'int', value: position.y },
-                    z: { type: 'int', value: position.z },
-                }},
-                Size: { type: 'compound', value: {
-                    x: { type: 'int', value: size.x },
-                    y: { type: 'int', value: size.y },
-                    z: { type: 'int', value: size.z },
-                }},
-                BlockStates: { type: 'long_array', value: packedStates },
-                Palette: { type: 'list', value: { type: 'compound', value: palette } },
+                Position: { type: positionNbt.type, value: positionNbt.value },
+                Size: { type: sizeNbt.type, value: sizeNbt.value },
+                BlockStates: {  type: 'longArray', value: signedPackedLongs },
+                BlockStatePalette: { type: 'list', value: { type: 'compound', value: palette } },
                 ...(litematicEntities.length > 0 && { Entities: { type: 'list', value: { type: 'compound', value: litematicEntities } } }),
                 ...(litematicTileEntities.length > 0 && { TileEntities: { type: 'list', value: { type: 'compound', value: litematicTileEntities } } }),
             }
         };
     }
-    
-    // --- 6. 构建最终的 Litematic NBT 结构 ---
+
+    // --- 5. 构建根 NBT ---
     const rootNbt: NBT = {
         type: 'compound',
-        name: '', // Root tag name must be empty for litematics
+        name: '',
         value: {
             Version: { type: 'int', value: 6 },
             MinecraftDataVersion: { type: 'int', value: uniStruct.minecraftDataVersion },
@@ -400,25 +536,19 @@ export function convertUniStructToLitematic(uniStruct: IUniStruct): Buffer {
                     TotalBlocks: { type: 'int', value: uniStruct.meta.totalBlocks },
                     TotalVolume: { type: 'int', value: uniStruct.meta.size.x * uniStruct.meta.size.y * uniStruct.meta.size.z },
                     RegionCount: { type: 'int', value: Object.keys(litematicRegions).length },
-                    EnclosingSize: { type: 'compound', value: {
-                        x: { type: 'int', value: uniStruct.meta.size.x },
-                        y: { type: 'int', value: uniStruct.meta.size.y },
-                        z: { type: 'int', value: uniStruct.meta.size.z },
-                    }},
+                    EnclosingSize: { type: 'compound', value: jsToNbt(uniStruct.meta.size).value },
                 }
             },
-            Regions: {
-                type: 'compound',
-                value: litematicRegions
-            }
+            Regions: { type: 'compound', value: litematicRegions }
         }
     };
-    
-    // --- 7. 序列化为 NBT 并用 GZIP 压缩 ---
-    const nbtBuffer = nbt.writeUncompressed(rootNbt, 'big');
+
+    console.log(rootNbt);
+
+    // --- 6. 序列化与压缩 ---
+    const nbtBuffer = nbt.writeUncompressed(rootNbt);
     const nbtUint8Array = new Uint8Array(nbtBuffer.buffer, nbtBuffer.byteOffset, nbtBuffer.byteLength);
     const gzippedUint8Array = pakoGzip(nbtUint8Array);
-    
-    // pako 返回一个 Uint8Array, 我们需要将其转换为 Node.js Buffer 以便写入文件
+
     return Buffer.from(gzippedUint8Array);
 }

@@ -1,3 +1,5 @@
+// modules/unistruct.ts
+
 import type { IUniStructMeta, IUniBlock, IUniStruct, IUniStructRaw, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
 import { parseLitematica, convertUniStructToLitematic } from '~/stores/litematic-parser';
 import type { ParsedLitematica } from '~/stores/litematic-parser';
@@ -221,7 +223,7 @@ export class Unistruct {
         const litematicaData: ParsedLitematica = {
             minecraftDataVersion: uniStruct.minecraftDataVersion,
             // Litematic 文件格式版本, 对于 1.13+ 通常是 6
-            version: 6,
+            version: -6,
             metadata: uniStruct.meta,
             regions: {},
         };
@@ -235,12 +237,12 @@ export class Unistruct {
                 const uniqueBlocks = new Map<string, BlockState>();
 
                 // 遍历三维方块数组来填充 Map
-                for (let x = 0; x < uniRegion.size.x; x++) {
-                    for (let y = 0; y < uniRegion.size.y; y++) {
-                        for (let z = 0; z < uniRegion.size.z; z++) {
+                for (let x = 0; x < Math.abs(uniRegion.size.x); x++) {
+                    for (let y = 0; y < Math.abs(uniRegion.size.y); y++) {  
+                        for (let z = 0; z < Math.abs(uniRegion.size.z); z++) {
                             const block = uniRegion.blocks[x]![y]![z]!;
-                            // 使用 JSON 字符串作为 Map 的键来判断唯一性
-                            const key = JSON.stringify(block);
+                            
+                            const key = UniStructSerializer.getBlockKey(block);
                             if (!uniqueBlocks.has(key)) {
                                 uniqueBlocks.set(key, block);
                             }
@@ -281,7 +283,7 @@ export class Unistruct {
         const litematicBuffer = convertUniStructToLitematic(this.data);
         const file = new File(
             [litematicBuffer.buffer.slice(litematicBuffer.byteOffset, litematicBuffer.byteLength + litematicBuffer.byteOffset) as ArrayBuffer],
-            `${this.data.meta.name}.litematica`,
+            `${this.data.meta.name}.litematic`,
             { type: 'application/octet-stream' }
         );
         return file;
@@ -475,17 +477,22 @@ export class UniStructSerializer {
         const frequencyMap = new Map<string, number>();
 
         try {
-
-            // 计算频率
-            for (let y = 0; y < blocks.length; y++) {
-                if (!blocks[y]) continue;
-
-                for (let z = 0; z < blocks[y]!.length; z++) {
-                    if (!blocks[y]![z]) continue;
-
-                    for (let x = 0; x < blocks[y]![z]!.length; x++) {
-                        const block = blocks[y]![z]![x];
-                        if (!block) continue;
+            const sizeX = blocks.length;
+            if (sizeX === 0) { // 处理空输入
+                return [new HuffmanNode("minecraft:air", 1), new Map([["minecraft:air", "0"]])];
+            }
+            const sizeY = blocks[0]!.length;
+            if (sizeY === 0) { // 处理空输入
+                return [new HuffmanNode("minecraft:air", 1), new Map([["minecraft:air", "0"]])];
+            }
+            const sizeZ = blocks[0]![0]!.length;
+            
+            // *** 关键修复：按 Y -> Z -> X 或任何顺序遍历都行，但必须按 [x][y][z] 访问 ***
+            for (let x = 0; x < sizeX; x++) {
+                for (let y = 0; y < sizeY; y++) {
+                    for (let z = 0; z < sizeZ; z++) {
+                        const block = blocks[x]?.[y]?.[z];
+                        if (!block) continue; // 跳过 undefined
 
                         const key = this.getBlockKey(block);
                         frequencyMap.set(key, (frequencyMap.get(key) || 0) + 1);
@@ -561,37 +568,45 @@ export class UniStructSerializer {
     private static encodeBlocks(blocks: IUniBlock[][][]): string {
         const [_, codeMap] = this.buildHuffmanTree(blocks);
         let bitString = "";
-        let blockCount = 0;
-        const expectedBlocks = blocks.length * blocks[0]!.length * blocks[0]![0]!.length;
+        
+        // 获取正确的尺寸
+        const sizeX = blocks.length;
+        if (sizeX === 0) return "";
+        const sizeY = blocks[0]!.length;
+        if (sizeY === 0) return "";
+        const sizeZ = blocks[0]![0]!.length;
 
         try {
-            // 按Y Z X顺序编码
-            for (let y = 0; y < blocks.length; y++) {
-                for (let z = 0; z < blocks[y]!.length; z++) {
-                    for (let x = 0; x < blocks[y]![z]!.length; x++) {
-                        const block = blocks[y]![z]![x]!;
+            // *** 关键修复：按 Y -> Z -> X 顺序遍历，但按 [x][y][z] 顺序访问 ***
+            for (let y = 0; y < sizeY; y++) {
+                for (let z = 0; z < sizeZ; z++) {
+                    for (let x = 0; x < sizeX; x++) {
+                        const block = blocks[x]?.[y]?.[z]; // 正确访问
+                        if (!block) {
+                            // 处理非立方体区域的空位
+                            const airKey = "minecraft:air";
+                            const code = codeMap.get(airKey) || codeMap.get("minecraft:air|properties={}");
+                            if (!code) throw new Error("Air not found in Huffman code map");
+                            bitString += code;
+                            continue;
+                        }
+
                         const key = this.getBlockKey(block);
                         const code = codeMap.get(key);
 
                         if (!code) {
+                            console.error(`Block key not found in palette: ${key}`, codeMap);
                             throw new Error(`Block key not found in palette: ${key}`);
                         }
 
                         bitString += code;
-                        blockCount++;
                     }
                 }
             }
-
-            if (blockCount !== expectedBlocks) {
-                console.warn(`Encoded ${blockCount} blocks, expected ${expectedBlocks}. Data size may be incorrect.`);
-            }
         } catch (error) {
             console.error("Error encoding blocks:", error);
-            // 返回空字符串作为错误指示
             return "";
         }
-        console.log("Encoded bit string:", bitString);
         return bitString;
     }
 
@@ -1075,12 +1090,13 @@ export class UniStructDeserializer {
         const height = Math.abs(size.y);
         const depth = Math.abs(size.z);
 
-        for (let y = 0; y < height; y++) {
-            blocks[y] = [];
-            for (let z = 0; z < depth; z++) {
-                blocks[y]![z] = [];
-                for (let x = 0; x < width; x++) {
-                    blocks[y]![z]![x] = { name: "minecraft:air" };
+        // *** 关键修复：创建 [X][Y][Z] 格式的数组 ***
+        for (let x = 0; x < width; x++) {
+            blocks[x] = [];
+            for (let y = 0; y < height; y++) {
+                blocks[x]![y] = [];
+                for (let z = 0; z < depth; z++) {
+                    blocks[x]![y]![z] = { name: "minecraft:air", properties: {} };
                 }
             }
         }
@@ -1191,27 +1207,18 @@ export class UniStructDeserializer {
         return [str, offset + length];
     }
 
+    
+
     private static decodeBlocks(
         bitString: string,
         huffmanRoot: HuffmanNode,
         size: Vector3
     ): IUniBlock[][][] {
         //console.log(`Decoding blocks with palette size ${palette.size}, bit length ${bitString.length}`);
-        // 创建空3D数组
-        const blocks: IUniBlock[][][] = [];
         const { x, y, z } = { x: Math.abs(size.x), y: Math.abs(size.y), z: Math.abs(size.z) }
         const totalBlocks = x * y * z;
 
-        for (let y = 0; y < y; y++) {
-            blocks[y] = [];
-            for (let z = 0; z < z; z++) {
-                blocks[y]![z] = [];
-                for (let x = 0; x < x; x++) {
-                    // 初始化为空气方块作为后备
-                    blocks[y]![z]![x] = { name: "minecraft:air" };
-                }
-            }
-        }
+        const blocks: IUniBlock[][][] = this.createEmptyBlocks(size);
 
         try {
             let currentNode = huffmanRoot;
@@ -1224,9 +1231,7 @@ export class UniStructDeserializer {
 
             // 使用不同的变量名避免冲突
             for (let yIdx = 0; yIdx < height; yIdx++) {
-                blocks[yIdx] = [];
                 for (let zIdx = 0; zIdx < depth; zIdx++) {
-                    blocks[yIdx]![zIdx] = [];
                     for (let xIdx = 0; xIdx < width; xIdx++) {
                         // 遍历Huffman树直到找到叶节点
                         while (currentNode && currentNode.symbol === null) {
@@ -1251,10 +1256,10 @@ export class UniStructDeserializer {
                         const block = UniStructDeserializer.getBlockFromKey(blockKey);
 
                         if (block) {
-                            blocks[yIdx]![zIdx]![xIdx] = block;
+                            blocks[xIdx]![yIdx]![zIdx] = block;
                         } else {
                             console.warn(`Block not found in palette: ${blockKey}`);
-                            blocks[yIdx]![zIdx]![xIdx] = { name: "minecraft:air" };
+                            blocks[xIdx]![yIdx]![zIdx] = { name: "minecraft:air" };
                         }
 
                         // 重置为根节点
@@ -1277,13 +1282,13 @@ export class UniStructDeserializer {
                 const correctedBlocks = this.createEmptyBlocks(size);
 
                 // 尽可能多地复制已解码的区块
-                const copyY = Math.min(blocks.length, correctedBlocks.length);
-                for (let y = 0; y < copyY; y++) {
-                    const copyZ = Math.min(blocks[y]!.length, correctedBlocks[y]!.length);
-                    for (let z = 0; z < copyZ; z++) {
-                        const copyX = Math.min(blocks[y]![z]!.length, correctedBlocks[y]![z]!.length);
-                        for (let x = 0; x < copyX; x++) {
-                            correctedBlocks[y]![z]![x] = blocks[y]![z]![x]!;
+                const copyX = Math.min(blocks.length, correctedBlocks.length);
+                for (let x = 0; x < copyX; x++) {
+                    const copyY = Math.min(blocks[x]!.length, correctedBlocks[x]!.length);
+                    for (let y = 0; y < copyY; y++) {
+                        const copyZ = Math.min(blocks[x]![y]!.length, correctedBlocks[x]![y]!.length);
+                        for (let z = 0; z < copyZ; z++) {
+                            correctedBlocks[x]![y]![z] = blocks[x]![y]![z]!;
                         }
                     }
                 }
