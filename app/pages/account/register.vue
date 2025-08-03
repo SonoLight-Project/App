@@ -1,44 +1,31 @@
 <script lang="ts" setup>
     import { ref } from "vue";
-    import { useRouter } from "vue-router";
+    import { PAAuth } from "~/modules/api";
     import { EventBus } from "~/modules/Eventbus";
-    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
+    import { wrapRequestErrorMessage } from "~/utils/PublicFunction";
 
     const username = ref("");
     const email = ref("");
     const password = ref("");
     const loading = ref(false);
-    const router = useRouter();
 
     const register = async () => {
         loading.value = true;
-
-        try {
-            await $fetch("/api/auth/register", {
-                method: "POST",
-                body: {
-                    username: username.value,
-                    email: email.value,
-                    password: password.value,
-                },
-            });
-
-            // 注册成功，跳转登录页
-            await router.push("/account/login");
-
-            // 在跳转后展示内容
+        const [success, err] = await PAAuth.Register(username.value, email.value, password.value);
+        if (success) {
+            await navigateTo("/account/login");
             EventBus.emit("toast:create", {
                 alertType: "success",
                 content: "注册成功，请登录",
             });
-        } catch (err: any) {
+        }
+        if (err) {
             EventBus.emit("toast:create", {
                 alertType: "error",
-                content: wrapRequestErrorMessage(err, "注册失败，请检查输入"),
+                content: wrapRequestErrorMessage(err, "注册失败，请重试"),
             });
-        } finally {
-            loading.value = false;
         }
+        loading.value = false;
     };
 </script>
 
@@ -67,7 +54,8 @@
 
                 <fieldset class="fieldset">
                     <label class="label">
-                        已有账户？<a class="-ml-1 underline cursor-pointer" @click.prevent="$router.push('/account/login')">立即登录</a>
+                        已有账户？
+                        <NuxtLink class="-ml-1 underline cursor-pointer" href="/account/login">立即登录</NuxtLink>
                     </label>
                 </fieldset>
 

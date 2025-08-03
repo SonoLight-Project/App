@@ -1,5 +1,6 @@
 <script lang="ts" setup>
     const route = useRoute();
+
     const { data } = await useAsyncData(route.path, () => {
         return queryCollection("docs").path(route.path).first();
     });
@@ -25,6 +26,7 @@
 
 <style lang="scss" scoped>
     .prose {
+        color: var(--color-secondary);
         --tw-prose-body: color-mix(in oklab, var(--color-base-content) 95%, #0000);
 
         :deep(h2 a),

@@ -73,7 +73,7 @@ class LoggingFactory {
 
     public createJob(job_name: string): number {
         const id = random(9999);
-        LoggingFactory.grouping_record.set(id, job_name);
+        LoggingFactory.grouping_record.set(id, `${job_name} #${id}`);
         return id;
     }
 
@@ -103,4 +103,4 @@ class LoggingFactory {
     }
 }
 
-export default LoggingFactory.getInstance();
+export const logger = LoggingFactory.getInstance();

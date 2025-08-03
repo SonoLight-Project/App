@@ -1,21 +1,69 @@
+@font-face {
+    font-family: "Motiva Sans";
+    src: url("/assets/fonts/MotivaSansMedium.ttf") format("truetype");
+}
+
 @layer base {
+    /* Reset */
     *:not(.allow-select) {
         user-select: none;
     }
-
-    body {
-        width: 100vw;
-        height: 100vh;
-        margin: 0;
-        font-family: Outfit, "Noto Sans JP", "Noto Sans", Vazirmatn, sans-serif;
-    }
-
-    *:not(.no-transition) {
-        transition: all 0.25s ease-in-out;
+    img {
+        pointer-events: none;
     }
 
     ::-webkit-scrollbar {
         display: none;
+    }
+
+    /* Default */
+    body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        font-family: "Motiva Sans", "Noto Sans", sans-serif;
+    }
+
+    *,
+    button {
+        color: var(--color-secondary);
+    }
+
+    /* Transition */
+    *.ui-transition {
+        transition: all 0.25s ease-in-out;
+    }
+
+    /* Heading Font Set */
+    .ui-font-hl {
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+    .ui-font-hm {
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .ui-font-hs {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    /* Body Font Set */
+    .ui-font-bl {
+        font-size: 16px;
+        font-weight: 400;
+    }
+
+    .ui-font-bm {
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .ui-font-bs {
+        font-size: 12px;
+        font-weight: 400;
     }
 }
 
@@ -50,6 +98,13 @@
         top: 7%;
         right: 7%;
     }
+
+    .ui-background-machine {
+        background-image: url("/assets/images/BgMachine.webp");
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center 10%;
+    }
 }
 
 @plugin "daisyui" {
@@ -61,26 +116,27 @@
     default: true;
     prefersdark: false;
     color-scheme: "light";
-    --color-base-100: oklch(95% 0.0222 83.03);
-    --color-base-200: oklch(92% 0.0222 83.03);
-    --color-base-300: oklch(91% 0.0222 83.03);
+
+    /* Base Colors */
     --color-base-content: oklch(25.33% 0.0222 83.03);
-    --color-primary: oklch(0.604 0.149 253.68);
+    --color-primary: oklch(0.5864 0.2272 26.8);
     --color-primary-content: oklch(98% 0.002 247.839);
-    --color-secondary: oklch(90.88% 0.0615 83.03);
+    --color-secondary: oklch(12% 0.0615 83.03);
     --color-secondary-content: oklch(21% 0.034 264.665);
-    --color-accent: oklch(75% 0.183 55.934);
+    --color-accent: oklch(86% 0.1824 103.09);
     --color-accent-content: oklch(21% 0.034 264.665);
     --color-neutral: oklch(44% 0.043 257.281);
     --color-neutral-content: oklch(98% 0.003 247.858);
-    --color-info: oklch(74% 0.16 232.661);
-    --color-info-content: oklch(29% 0.066 243.157);
-    --color-success: oklch(76% 0.177 163.223);
-    --color-success-content: oklch(26% 0.051 172.552);
-    --color-warning: oklch(82% 0.189 84.429);
+    --color-info: oklch(72% 0.16 256.91);
+    --color-info-content: oklch(29% 0.16 256.91);
+    --color-success: oklch(80% 0.177 136.2);
+    --color-success-content: oklch(37% 0.177 136.2);
+    --color-warning: oklch(80% 0.1569 73.05);
     --color-warning-content: oklch(27% 0.077 45.635);
-    --color-error: oklch(70% 0.191 22.216);
+    --color-error: oklch(72% 0.191 22.216);
     --color-error-content: oklch(25% 0.092 26.042);
+
+    /* Component Styles */
     --radius-selector: 0.5rem;
     --radius-field: 0.25rem;
     --radius-box: 0.5rem;
@@ -96,26 +152,27 @@
     default: false;
     prefersdark: true;
     color-scheme: "dark";
-    --color-base-100: oklch(25.33% 0.0222 83.03);
-    --color-base-200: oklch(23.26% 0.0222 83.03);
-    --color-base-300: oklch(21.15% 0.0222 83.03);
+
+    /* Base Colors */
     --color-base-content: oklch(95% 0.0222 83.03);
-    --color-primary: oklch(0.504 0.149 253.68);
-    --color-primary-content: oklch(96% 0.003 264.542);
+    --color-primary: oklch(0.5864 0.2272 26.8);
+    --color-primary-content: oklch(98% 0.002 247.839);
     --color-secondary: oklch(90.88% 0.0615 83.03);
     --color-secondary-content: oklch(21% 0.034 264.665);
-    --color-accent: oklch(70% 0.213 47.604);
+    --color-accent: oklch(72% 0.1824 103.09);
     --color-accent-content: oklch(21% 0.034 264.665);
     --color-neutral: oklch(14% 0.005 285.823);
     --color-neutral-content: oklch(92% 0.004 286.32);
-    --color-info: oklch(74% 0.16 232.661);
-    --color-info-content: oklch(29% 0.066 243.157);
-    --color-success: oklch(76% 0.177 163.223);
-    --color-success-content: oklch(37% 0.077 168.94);
-    --color-warning: oklch(82% 0.189 84.429);
-    --color-warning-content: oklch(41% 0.112 45.904);
-    --color-error: oklch(71% 0.194 13.428);
-    --color-error-content: oklch(27% 0.105 12.094);
+    --color-info: oklch(58% 0.16 256.91);
+    --color-info-content: oklch(29% 0.16 256.91);
+    --color-success: oklch(76% 0.177 136.2);
+    --color-success-content: oklch(37% 0.177 136.2);
+    --color-warning: oklch(76% 0.1569 73.05);
+    --color-warning-content: oklch(27% 0.077 45.635);
+    --color-error: oklch(58% 0.191 22.216);
+    --color-error-content: oklch(25% 0.092 26.042);
+
+    /* Component Styles */
     --radius-selector: 0.5rem;
     --radius-field: 0.25rem;
     --radius-box: 0.5rem;
@@ -125,4 +182,3 @@
     --depth: 1;
     --noise: 0;
 }
-

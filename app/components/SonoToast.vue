@@ -11,7 +11,7 @@
     EventBus.on("toast:create", (payload: TAlertInst) => {
         const list = alert_list.value;
         list.push(payload);
-    });
+    }); 
 </script>
 
 <template>

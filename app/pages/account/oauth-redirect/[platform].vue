@@ -1,13 +1,10 @@
 <script lang="ts" setup>
-    import { useOAuthStore } from "~/stores/oauth";
-    import { useAccountStore } from "~/stores/account";
-    import type { IApiUserResponse } from "~/types/api/LoginType";
-    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
     import { EventBus } from "~/modules/Eventbus";
+    import { OAuth } from "~/modules/api";
+    import { useOAuthStore } from "~/stores/oauth";
 
     const $route = useRoute();
     const oauthStore = useOAuthStore();
-    const accountStore = useAccountStore();
     const isLoading = ref(false);
     const error = ref<string | null>(null);
 
@@ -21,9 +18,9 @@
         if (process.server) return;
 
         const route = useRoute();
+        const platform = route.params.platform as string;
         const code = route.query.code as string;
         const state = route.query.state as string;
-        const platform = route.params.platform as string;
 
         if (!code) {
             error.value = "缺少授权码";
@@ -32,34 +29,23 @@
 
         isLoading.value = true;
 
-        try {
-            const res = await $fetch(`/api/oauth/${platform}/${oauthStore.action}`, {
-                method: "POST",
-                body: {
-                    code,
-                    state,
-                },
-            });
-
-            const _u = (res as { message: string; user: IApiUserResponse }).user;
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"], _u["mcjpgUsername"]);
-
+        const [success, err] = await OAuth.Login(platform, code, state);
+        if (success) {
             if (oauthStore.action === "login") {
-                navigateTo("/dashboard");
+                navigateTo("/explore");
             } else if (oauthStore.action === "bind") {
                 navigateTo("/settings/account");
             }
-
             EventBus.emit("toast:create", {
                 alertType: "success",
                 content: "授权成功",
             });
-        } catch (err: any) {
-            error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
-        } finally {
-            isLoading.value = false;
-            oauthStore.setOperation(false);
         }
+        if (err) {
+            error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
+        }
+        isLoading.value = false;
+        oauthStore.setOperation(false);
     });
 </script>
 
