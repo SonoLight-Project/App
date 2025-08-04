@@ -24,7 +24,7 @@
                 {{ item.name }}
             </button>
         </section>
-        <section id="nav-explore-section-search" class="mx-auto w-1/8 lg:w-1/4">
+        <section id="nav-explore-section-search" class="ml-auto w-1/8 lg:w-1/4">
             <label class="input w-full h-7">
                 <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none" stroke="currentColor">

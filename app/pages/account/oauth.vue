@@ -9,9 +9,7 @@
         try {
             const uri = await $fetch("/api/oauth/query", {
                 method: "GET",
-                query: {
-                    platform,
-                },
+                query: { platform },
             });
             if (!uri) {
                 EventBus.emit("toast:create", {
@@ -30,6 +28,10 @@
             return;
         }
     };
+
+    useHead({
+        link: [{ rel: "preload", as: "image", href: "https://mcjpg.org/logo.png" }],
+    });
 </script>
 
 <template>

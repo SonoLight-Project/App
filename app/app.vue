@@ -7,7 +7,7 @@
     <div class="w-screen p-0">
         <SonoNavsGlobalNav />
         <section class="w-full h-full bg-white/80 dark:bg-black/80">
-            <NuxtPage class="min-h-screen pt-16" />
+            <NuxtPage class="min-h-screen pt-16 overflow-x-hidden" />
         </section>
         <!-- <SonoFooter /> -->
     </div>

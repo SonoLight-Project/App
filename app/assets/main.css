@@ -36,33 +36,33 @@
 
     /* Heading Font Set */
     .ui-font-hl {
-        font-size: 26px;
+        font-size: 32px;
         font-weight: 700;
     }
 
     .ui-font-hm {
-        font-size: 22px;
+        font-size: 28px;
         font-weight: 700;
     }
 
     .ui-font-hs {
-        font-size: 18px;
+        font-size: 24px;
         font-weight: 700;
     }
 
     /* Body Font Set */
     .ui-font-bl {
-        font-size: 16px;
+        font-size: 22px;
         font-weight: 400;
     }
 
     .ui-font-bm {
-        font-size: 14px;
+        font-size: 20px;
         font-weight: 400;
     }
 
     .ui-font-bs {
-        font-size: 12px;
+        font-size: 18px;
         font-weight: 400;
     }
 }
