@@ -281,8 +281,7 @@ function bigIntToPrismarineLong(n: bigint): [number, number] {
 }
 
 /**
- * 辅助函数 2：将任意 JS 值/对象递归转换为 NBT 详细格式。
- * 这是最终的、经过验证的健壮版本。
+ * 将任意 JS 值/对象递归转换为 NBT 详细格式。
  * @param value - 要转换的 JS 值
  * @param keyHint - (可选) 当前值的键名，用于类型推断
  */

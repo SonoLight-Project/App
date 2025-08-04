@@ -539,7 +539,7 @@ export class UniStructSerializer {
             // 生成编码表
             const codeMap = new Map<string, string>();
             this.generateCodes(root, "", codeMap);
-            console.log("Huffman code map:", codeMap);
+            // console.log("Huffman code map:", codeMap);
             return [root, codeMap];
         } catch (error) {
             console.error("Error building Huffman tree:", error);
