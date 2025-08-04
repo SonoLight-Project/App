@@ -1,10 +1,5 @@
 # 社区指导方针
 
-<div role="alert" class="alert alert-warning">
-    <Icon name="ic:round-warning-amber" size="24"></Icon>
-    <span>此方针尚未完成编写，目前不具有任何效力</span>
-</div>
-
 **版本**： 1.0\
 **最后更新日期**： 2025 年 7 月 24 日
 

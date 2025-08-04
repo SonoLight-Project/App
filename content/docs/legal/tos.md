@@ -1,10 +1,5 @@
 # 用户许可协议 (ToS)
 
-<div role="alert" class="alert alert-warning">
-    <Icon name="ic:round-warning-amber" class="text-black" size="24"></Icon>
-    <span class="text-black">此协议尚未完成编写，目前不具有任何效力</span>
-</div>
-
 **版本**： 1.0\
 **最后更新日期**： 2025 年 7 月 24 日
 

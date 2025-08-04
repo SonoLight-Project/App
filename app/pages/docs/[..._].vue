@@ -8,7 +8,7 @@
 
 <template>
     <main class="w-full h-full flex justify-center items-center">
-        <article v-if="data" class="prose px-12 pt-24 pb-8 lg:max-w-4/5">
+        <article v-if="data" class="prose px-12 pt-12 pb-8 lg:max-w-4/5">
             <ContentRenderer :value="data" />
         </article>
         <div v-else class="card w-96 h-fit bg-base-100 card-md shadow-sm">
@@ -26,12 +26,15 @@
 
 <style lang="scss" scoped>
     .prose {
-        color: var(--color-secondary);
         --tw-prose-body: color-mix(in oklab, var(--color-base-content) 95%, #0000);
 
         :deep(h2 a),
         :deep(h3 a) {
             text-decoration: none;
+        }
+
+        :deep(*) {
+            color: var(--color-secondary);
         }
     }
 </style>

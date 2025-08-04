@@ -73,6 +73,7 @@
     };
 
     const confirmCreateTag = async () => {
+        isLoading.value = true;
         const [success, error] = await CreateTag(createForm.value.name, createForm.value.description, createForm.value.slug);
         if (success) {
             EventBus.emit("toast:create", {
@@ -87,6 +88,7 @@
                 content: wrapRequestErrorMessage(error, "标签创建失败"),
             });
             closeCreateModal();
+            isLoading.value = false;
         }
     };
 
@@ -109,11 +111,9 @@
 
     const confirmEditTag = async () => {
         if (!editingTag.value) return;
+        isLoading.value = true;
 
-        // 构造更新数据
         const updates = [];
-
-        // 检查并添加变更的字段
         if (editForm.value.name !== editingTag.value.name) {
             updates.push(["name", editForm.value.name]);
         }
@@ -124,13 +124,12 @@
             updates.push(["slug", editForm.value.slug]);
         }
 
-        // 如果没有变更，则直接关闭模态框
         if (updates.length === 0) {
             closeEditModal();
+            isLoading.value = false;
             return;
         }
 
-        console.debug("debug", updates);
         const [success, error] = await UpdateTag(
             editingTag.value.id,
             // @ts-ignore
@@ -149,6 +148,7 @@
                 content: wrapRequestErrorMessage(error, "标签更新失败"),
             });
             closeEditModal();
+            isLoading.value = false;
         }
     };
 
@@ -164,6 +164,7 @@
 
     const confirmDeleteTag = async () => {
         if (!deletingTag.value) return;
+        isLoading.value = true;
         // 检查是否还有内容
         if (deletingTag.value.count > 0) {
             closeDeleteModal();
@@ -171,6 +172,7 @@
                 alertType: "error",
                 content: "标签下有内容，无法删除",
             });
+            isLoading.value = false;
             return;
         }
         const [success, error] = await DeleteTag(deletingTag.value.id);
@@ -187,6 +189,7 @@
                 alertType: "error",
                 content: wrapRequestErrorMessage(error, "标签删除失败"),
             });
+            isLoading.value = false;
         }
     };
 
@@ -241,9 +244,9 @@
                         <td>{{ tag.slug }}</td>
                         <td>{{ tag.count }}</td>
                         <td>
-                            <button class="btn btn-sm btn-warning mr-2" @click="openEditModal(tag)">查看全部</button>
-                            <button class="btn btn-sm btn-info mr-2" @click="openEditModal(tag, true)">编辑</button>
-                            <button class="btn btn-sm btn-error" @click="openDeleteModal(tag)">删除</button>
+                            <button class="btn btn-sm btn-warning mr-2" @click="openEditModal(tag)" :disabled="isLoading">查看全部</button>
+                            <button class="btn btn-sm btn-info mr-2" @click="openEditModal(tag, true)" :disabled="isLoading">编辑</button>
+                            <button class="btn btn-sm btn-error" @click="openDeleteModal(tag)" :disabled="isLoading">删除</button>
                         </td>
                     </tr>
                 </tbody>

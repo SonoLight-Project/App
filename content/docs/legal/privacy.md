@@ -1,10 +1,5 @@
 # 隐私政策
 
-<div role="alert" class="alert alert-warning">
-    <Icon name="ic:round-warning-amber" size="24"></Icon>
-    <span>此政策尚未完成编写，目前不具有任何效力</span>
-</div>
-
 **版本**：1.0\
 **生效日期**：暂未生效
 

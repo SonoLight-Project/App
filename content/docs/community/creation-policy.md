@@ -1,10 +1,5 @@
 # 社区创建政策
 
-<div role="alert" class="alert alert-warning">
-    <Icon name="ic:round-warning-amber" size="24"></Icon>
-    <span>此政策尚未完成编写，目前不具有任何效力</span>
-</div>
-
 欢迎来到“声致发光”，一个旨在收集、保存和展示《我的世界》(Minecraft) 相关服务器、建筑、衍生作品等数字创作的赛博博物馆。
 为维护一个健康、有活力的创作环境，所有希望创建社区的用户（“创建者”）都必须阅读并同意本政策。
 

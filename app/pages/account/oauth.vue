@@ -7,7 +7,7 @@
     const startOAuthLogin = async (platform: "discord" | "github" | "mcjpg") => {
         oauthStore.setAction("login");
         try {
-            const uri = await $fetch("/api/oauth/query", {
+            const uri = await $fetch<string>("/api/oauth/query", {
                 method: "GET",
                 query: { platform },
             });
