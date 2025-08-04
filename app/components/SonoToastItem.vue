@@ -18,18 +18,18 @@
 <template>
     <div ref="alert" class="transition-opacity duration-250 ease-in-out">
         <div v-if="$props.type === `success`" ref="alert" class="alert alert-success">
-            <svg class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="h-6 w-6 shrink-0 stroke-[#171515]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
             </svg>
-            <span class="font-normal">
+            <span class="font-normal text-[#171515]">
                 {{ $props.content }}
             </span>
         </div>
         <div v-if="$props.type === `info`" ref="alert" class="alert alert-info">
-            <svg class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="h-6 w-6 shrink-0 stroke-[#171515]" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
             </svg>
-            <span class="font-normal">
+            <span class="font-normal text-[#171515]">
                 {{ $props.content }}
             </span>
         </div>

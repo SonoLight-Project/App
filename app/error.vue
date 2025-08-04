@@ -1,73 +1,61 @@
 <script lang="ts" setup>
-    import type { NuxtError } from "#app";
+    const error = useError();
 
-    const _props = defineProps({
-        error: Object as () => NuxtError,
-    });
-
-    const errorCode = computed<number>(() => _props.error?.statusCode ?? 1000);
-
-    interface IErrorTextObj {
-        [key: number]: string;
+    interface ErrorDetail {
+        title: string;
+        description: string[];
     }
-
-    const errorTitle: IErrorTextObj = {
-        // HTTP Status
-        404: "这里... 什么都没有呢...",
-        // Custom
-        1000: "未知错误",
+    const errorMessages: Record<number, ErrorDetail> = {
+        500: {
+            title: "500 内部服务器错误",
+            description: ["服务器遇到了一个内部错误，无法完成您的请求", "请稍后重试，如果此问题持续存在，请联系管理员"],
+        },
+        404: {
+            title: "404 未找到页面",
+            description: ["页面不存在"],
+        },
+        401: {
+            title: "401 未授权",
+            description: ["您没有权限访问此页面"],
+        },
     };
-
-    const errorDescription: IErrorTextObj = {
-        // HTTP Status
-        404: "没有找到您所请求的内容",
-        // Custom
-        1000: "请联系站点管理员",
-    };
+    const errorDetail = computed<ErrorDetail>(
+        () =>
+            errorMessages[error.value!.statusCode] ?? {
+                title: "-1 未知错误",
+                description: ["请稍后重试，如果此问题持续存在，请联系管理员"],
+            }
+    );
 </script>
 
 <template>
-    <div class="w-screen h-screen p-0">
-        <section class="w-full h-full bg-primary/50 backdrop-blur-xs">
-            <!-- Content HERE -->
-            <SonoNav />
-            <main class="w-full h-full pb-12 flex flex-col justify-center items-center">
-                <h1 class="text-secondary text-4xl md:text-5xl lg:text-6xl">{{ errorTitle[errorCode] }}</h1>
-                <br />
-                <p class="text-secondary text-lg md:text-xl lg:text-2xl">{{ errorDescription[errorCode] }}</p>
-                <br />
-                <button class="btn btn-md md:btn-lg btn-secondary" @click="$router.push(`/`)">返回主页</button>
-            </main>
-            <SonoFooter />
+    <div class="w-screen p-0">
+        <SonoNavsGlobalNav />
+        <section class="w-full h-full min-h-screen backdrop-blur-md bg-black/95 flex flex-col items-center justify-center">
+            <h1 class="ui-font-hl fade-up">{{ errorDetail.title }}</h1>
+            <br />
+            <p class="ui-font-p fade-up" v-for="(item, index) in errorDetail.description" :key="index">
+                {{ item }}
+            </p>
         </section>
-        <div id="layout-default" class="w-screen h-screen fixed top-0 left-0 -z-999"></div>
+        <!-- <SonoFooter /> -->
     </div>
+    <SonoToast />
+    <div id="background" class="w-screen h-screen fixed top-0 left-0 -z-999"></div>
 </template>
 
 <style lang="scss" scoped>
-    .layout-enter-active,
-    .layout-leave-active,
-    .page-enter-active,
-    .page-leave-active {
-        transition: all 0.125s ease-in-out;
+    .fade-up {
+        transform: translateY(20px);
+        animation: fadeUp 0.5s ease-in-out forwards;
     }
 
-    .layout-enter-from div#__nuxt,
-    .layout-leave-to div#__nuxt,
-    .page-enter-from,
-    .page-leave-to {
-        opacity: 0;
-        scale: 105%;
-    }
-
-    div#layout-default {
-        background-image: url("/static/Images/BgItems.webp"), linear-gradient(to right, var(--color-primary), var(--color-primary));
-        background-size: cover;
-        background-position: center;
-        background-position-y: -15%;
-
-        @media (max-width: 768px) {
-            background-position-y: 0;
+    @keyframes fadeUp {
+        from {
+            transform: translateY(20px);
+        }
+        to {
+            transform: translateY(0);
         }
     }
 </style>
