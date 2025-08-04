@@ -8,8 +8,8 @@ export const wrapUserResponse = (UsersUser: IUsersDBRecord, OAuthUser: IOAuthDBR
     return {
         // Base Record
         userId: UsersUser.id,
-        userName: UsersUser.username,
-        userRole: UsersUser.role,
+        userName: UsersUser.userName,
+        userRole: UsersUser.userRole,
         // OAuth
         discordUsername: OAuthUser.discordUsername,
         githubUsername: OAuthUser.githubUsername,

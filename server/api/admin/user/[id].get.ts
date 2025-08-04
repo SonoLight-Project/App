@@ -1,40 +1,14 @@
 import { Userdata, Response, Params } from "~~/server/modules";
+import { verifyAdminPermission } from "~~/server/modules/admin";
 
 export default defineEventHandler(async (event) => {
     const JobId = logger.createJob("Api.Admin.User.Get");
     logger.info("管理员获取用户信息接口开始处理请求", JobId);
 
     try {
-        logger.trace("鉴权：获取操作者 ID", JobId);
-        const perfUserId = event.context.auth?.user?.id;
-        logger.debug(`鉴权：操作者 ID 获取完成: ${perfUserId ? "存在" : "不存在"}`, JobId);
-        if (!perfUserId) {
-            logger.error("需要先登录", JobId);
-            throw createError({
-                statusCode: 401,
-                message: "需要先登录",
-                data: { errorCode: "NOT_LOGGED_IN" },
-            });
-        }
-
-        logger.trace("鉴权：查询操作者信息", JobId);
-        const perfUser = await Userdata.getUserRecordUsersOnly(JobId, "id", perfUserId);
-        if (!perfUser) {
-            logger.error("操作者不存在", JobId);
-            throw createError({
-                statusCode: 404,
-                message: "操作者不存在",
-                data: { errorCode: "OPERATOR_NOT_FOUND" },
-            });
-        }
-        logger.debug(`鉴权：操作者信息查询完成: ${perfUser ? "存在" : "不存在"}`, JobId);
-        if (perfUser.role < 8) {
-            logger.warning("鉴权：权限不足", JobId);
-            throw createError({
-                statusCode: 403,
-                message: "权限不足",
-                data: { errorCode: "OPERATOR_NOT_ADMIN" },
-            });
+        const verifyError = await verifyAdminPermission(JobId, event);
+        if (verifyError) {
+            throw verifyError;
         }
 
         // 获取用户ID参数

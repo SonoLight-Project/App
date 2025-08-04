@@ -1,4 +1,5 @@
 import { Params } from "~~/server/modules";
+import { verifyAdminPermission } from "~~/server/modules/admin";
 import { supabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
@@ -6,27 +7,9 @@ export default defineEventHandler(async (event) => {
     logger.info("管理员删除标签接口开始处理请求", JobId);
 
     try {
-        logger.trace("鉴权：获取操作者 ID", JobId);
-        const perfUserId = event.context.auth?.user?.id;
-        logger.debug(`鉴权：操作者 ID 获取完成: ${perfUserId ? "存在" : "不存在"}`, JobId);
-        if (!perfUserId) {
-            logger.error("需要先登录", JobId);
-            throw createError({
-                statusCode: 401,
-                message: "需要先登录",
-                data: { errorCode: "NOT_LOGGED_IN" },
-            });
-        }
-
-        logger.trace("鉴权：查询操作者信息", JobId);
-        const perfUser = await supabase.from("users").select("role").eq("id", perfUserId).single();
-        if (!perfUser.data || perfUser.data.role < 8) {
-            logger.warning("鉴权：权限不足", JobId);
-            throw createError({
-                statusCode: 403,
-                message: "权限不足",
-                data: { errorCode: "OPERATOR_NOT_ADMIN" },
-            });
+        const verifyError = await verifyAdminPermission(JobId, event);
+        if (verifyError) {
+            throw verifyError;
         }
 
         logger.trace("获取标签 ID 参数", JobId);

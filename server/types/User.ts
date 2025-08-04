@@ -1,11 +1,11 @@
 export interface IUsersDBRecord {
     id: string;
     createAt: string;
-    username: string;
+    userName: string;
+    userRole: number;
     email: string;
     passwordHash: string;
     refreshToken: string | null;
-    role: number;
 }
 
 export interface IOAuthDBRecord {
