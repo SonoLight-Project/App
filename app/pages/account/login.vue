@@ -1,47 +1,29 @@
 <script lang="ts" setup>
     import { ref } from "vue";
+    import { PAAuth } from "~/modules/api";
     import { EventBus } from "~/modules/Eventbus";
-    import { useAccountStore } from "~/stores/account";
-    import type { IApiUserResponse } from "~/types/api/LoginType";
-    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
-    
-    const accountStore = useAccountStore();
-    
+
     const email = ref("");
     const password = ref("");
     const loading = ref(false);
-    
+
     const login = async () => {
         loading.value = true;
-        
-        try {
-            const res = await $fetch("/api/auth/login", {
-                method: "POST",
-                body: {
-                    email: email.value,
-                    password: password.value,
-                },
-            });
-            
-            const _u = res.user as IApiUserResponse
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
-            
-            // 跳转到面板
-            await navigateTo("/dashboard");
-            
+        const [success, err] = await PAAuth.Login(email.value, password.value);
+        if (success) {
+            await navigateTo("/explore");
             EventBus.emit("toast:create", {
                 alertType: "success",
-                content: "登录成功"
-            })
-        } catch (err: any) {
-            // 登录失败，展示错误信息
+                content: "登录成功",
+            });
+        }
+        if (err) {
             EventBus.emit("toast:create", {
                 alertType: "error",
                 content: wrapRequestErrorMessage(err, "登录失败，请重试"),
             });
-        } finally {
-            loading.value = false;
         }
+        loading.value = false;
     };
 </script>
 
@@ -54,16 +36,16 @@
             <div class="card-body">
                 <fieldset class="fieldset">
                     <legend class="fieldset-legend">邮箱<span class="text-error -ml-1">*</span></legend>
-                    <input v-model="email" class="input w-full" placeholder="请输入邮箱" type="email"/>
+                    <input v-model="email" class="input w-full" placeholder="请输入邮箱" type="email" />
                 </fieldset>
                 <fieldset class="fieldset">
                     <legend class="fieldset-legend">密码<span class="text-error -ml-1">*</span></legend>
-                    <input v-model="password" class="input w-full" placeholder="请输入密码" type="password"/>
+                    <input v-model="password" class="input w-full" placeholder="请输入密码" type="password" />
                 </fieldset>
                 <fieldset class="fieldset">
-                    <label class="label">还没有账户？
-                        <a class="-ml-1 underline cursor-pointer"
-                           @click.prevent="$router.push('/account/register')">立即注册</a>
+                    <label class="label">
+                        还没有账户？
+                        <NuxtLink class="-ml-1 underline cursor-pointer" href="/account/register">立即注册</NuxtLink>
                     </label>
                 </fieldset>
                 <fieldset class="fieldset">
@@ -73,9 +55,7 @@
                 </fieldset>
                 <div class="divider my-0"></div>
                 <fieldset class="fieldset">
-                    <button class="join-item btn btn-primary" @click="$router.push('/account/oauth')">
-                        使用第三方账户登录
-                    </button>
+                    <button class="join-item btn btn-primary btn-outline" @click="$router.push('/account/oauth')">使用第三方账户登录</button>
                 </fieldset>
             </div>
         </div>

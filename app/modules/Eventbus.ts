@@ -2,7 +2,7 @@ type EventHandler<T = any> = (payload: T) => void;
 
 class EventBusFactory<Events extends Record<string, any>> {
     private handlers: {
-        [K in keyof Events]?: Set<EventHandler<Events[K]>>
+        [K in keyof Events]?: Set<EventHandler<Events[K]>>;
     } = {};
 
     on<K extends keyof Events>(event: K, handler: EventHandler<Events[K]>) {
@@ -17,16 +17,14 @@ class EventBusFactory<Events extends Record<string, any>> {
     }
 
     emit<K extends keyof Events>(event: K, payload: Events[K]) {
-        this.handlers[event]?.forEach(handler => handler(payload));
+        this.handlers[event]?.forEach((handler) => handler(payload));
     }
 
     clear<K extends keyof Events>(event?: K) {
         if (event) {
             this.handlers[event]?.clear();
         } else {
-            (Object.keys(this.handlers) as Array<keyof Events>).forEach(
-                (e) => this.handlers[e]?.clear()
-            );
+            (Object.keys(this.handlers) as Array<keyof Events>).forEach((e) => this.handlers[e]?.clear());
         }
     }
 }

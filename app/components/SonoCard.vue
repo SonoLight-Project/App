@@ -8,16 +8,14 @@
             <h2 class="card-title">
                 <span class="text-primary">/</span>
                 {{ $props.title }}
-                <slot name="extra"/>
+                <slot name="extra" />
             </h2>
             <div class="px-4 mt-1 z-10">
-                <slot/>
+                <slot />
             </div>
-            <slot name="deco"/>
+            <slot name="deco" />
         </div>
     </div>
 </template>
 
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>

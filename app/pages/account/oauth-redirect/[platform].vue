@@ -1,72 +1,59 @@
 <script lang="ts" setup>
+    import { EventBus } from "~/modules/Eventbus";
+    import { OAuth } from "~/modules/api";
     import { useOAuthStore } from "~/stores/oauth";
-    import { useAccountStore } from "~/stores/account";
-    import type { IApiUserResponse } from "~/types/api/LoginType";
-    import { wrapRequestErrorMessage } from "~/modules/publicFunction";
 
     const $route = useRoute();
     const oauthStore = useOAuthStore();
-    const accountStore = useAccountStore();
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     
     const mapper: Record<string, any> = {
         github: "GitHub",
         discord: "Discord",
+        mcjpg: "MCJPG 通行证",
     };
     
     onMounted(async () => {
         if (process.server) return;
         
         const route = useRoute();
+        const platform = route.params.platform as string;
         const code = route.query.code as string;
         const state = route.query.state as string;
-        const platform = route.params.platform as string;
-        
         if (!code) {
             error.value = "缺少授权码";
             return;
         }
         
         isLoading.value = true;
-        
-        try {
-            const res: {
-                message: string;
-                user: IApiUserResponse;
-            } = await $fetch(`/api/oauth/${platform}/${oauthStore.action}`, {
-                method: "POST",
-                body: {
-                    code,
-                    state,
-                },
-            });
 
-            const _u = res.user as IApiUserResponse;
-            accountStore.setUser(_u["id"], _u["username"], _u["role"], _u["discordUsername"], _u["githubUsername"]);
-
+        const [success, err] = await OAuth.Login(platform, code, state);
+        if (success) {
+            if (oauthStore.action === "login") {
+                navigateTo("/explore");
+            } else if (oauthStore.action === "bind") {
+                navigateTo("/settings/account");
+            }
             EventBus.emit("toast:create", {
                 alertType: "success",
-                content: "绑定成功",
+                content: "授权成功",
             });
-
-            if (oauthStore.action === "login") {
-                return navigateTo("/dashboard");
-            } else if (oauthStore.action === "bind") {
-                return navigateTo("/settings/account");
-            }
-        } catch (err: any) {
-            error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
-        } finally {
-            isLoading.value = false;
         }
+        if (err) {
+            error.value = wrapRequestErrorMessage(err, "授权处理失败，请联系管理员");
+        }
+        isLoading.value = false;
+        oauthStore.setOperation(false);
     });
 </script>
 
 <template>
     <main class="w-full h-full flex flex-col justify-center items-center gap-2">
         <div class="card bg-base-100 shadow-sm w-3/4 md:w-1/3 py-2">
-            <h2 class="text-xl mx-auto">声致发光平台 · {{ mapper[$route.params.platform as string] }} 授权</h2>
+            <h2 class="text-xl mx-auto hidden lg:block">声致发光平台 · {{ mapper[$route.params.platform as string] }} 授权</h2>
+            <h2 class="text-xl mx-auto lg:hidden">声致发光平台</h2>
+            <h2 class="text-xl mx-auto lg:hidden">{{ mapper[$route.params.platform as string] }} 授权</h2>
         </div>
         
         <div class="card bg-base-100 shadow-sm w-3/4 md:w-1/3 py-4 px-6 flex flex-col gap-4">
