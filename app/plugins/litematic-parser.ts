@@ -8,18 +8,18 @@ import nbt from 'prismarine-nbt';
 import type { NBT, Long as PrismarineLong } from 'prismarine-nbt';
 import { gzip as pakoGzip } from 'pako';
 
-export interface BlockState {
+export interface IBlockState {
     name: string
     properties?: Record<string, any>
 }
 
-export interface DecodedBlock {
-    state: BlockState
+export interface IDecodedBlock {
+    state: IBlockState
 }
 
 
 
-export interface ParsedLitematica {
+export interface IParsedLitematica {
     minecraftDataVersion: number
     version: number
     metadata: {
@@ -34,8 +34,8 @@ export interface ParsedLitematica {
     regions: Record<string, {
         position: { x: number; y: number; z: number }
         size: { x: number; y: number; z: number }
-        palette: BlockState[]
-        blocks: BlockState[][][]
+        palette: IBlockState[]
+        blocks: IBlockState[][][]
         entities?: IUniEntity[]
         tileEntities?: IUniTileEntity[]
     }>
@@ -47,7 +47,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 export async function parseLitematica(
     input: File | string | Uint8Array
-): Promise<ParsedLitematica> {
+): Promise<IParsedLitematica> {
     let compressed: Uint8Array
     if (typeof File !== 'undefined' && input instanceof File) {
         compressed = new Uint8Array(await input.arrayBuffer())
@@ -94,7 +94,7 @@ export async function parseLitematica(
         modifiedTime: combineTimestamps(metaRaw.TimeModified[0], metaRaw.TimeModified[1])
     }
 
-    const regions: ParsedLitematica['regions'] = {}
+    const regions: IParsedLitematica['regions'] = {}
     const regionListRaw = rootValue.Regions as { [key: string]: Record<string, any> } | undefined
     console.log('reginoListRaw', regionListRaw, 'type: ', typeof regionListRaw)
     if (!regionListRaw) {
@@ -116,7 +116,7 @@ export async function parseLitematica(
         const position = posArr;
         const size = sizeArr;
 
-        const palette: BlockState[] = []
+        const palette: IBlockState[] = []
         const paletteRaw = region.BlockStatePalette as any[] | undefined
         if (paletteRaw) {
             for (const entry of paletteRaw) {
@@ -126,7 +126,7 @@ export async function parseLitematica(
             }
         }
 
-        let blocks: BlockState[][][] = []
+        let blocks: IBlockState[][][] = []
         const rawStates = region.BlockStates as bigint[] | undefined
         if (rawStates && palette.length > 0) {
             blocks = decodeBlockStates(rawStates, palette, size)
@@ -189,9 +189,9 @@ function combineTimestamps(high: number, low: number): bigint {
 // 将 bit-packed 数组解码为三维方块
 function decodeBlockStates(
     blockStates: bigint[], // 包含有符号的 64-bit BigInt
-    palette: BlockState[],
+    palette: IBlockState[],
     size: { x: number; y: number; z: number }
-): BlockState[][][] {
+): IBlockState[][][] {
     if (palette.length === 0) {
         return [];
     }
@@ -203,7 +203,7 @@ function decodeBlockStates(
     const totalBlocks = sizeX * sizeY * sizeZ;
 
     // 预先用 air 填充整个区域
-    const decodedBlocks: BlockState[][][] =
+    const decodedBlocks: IBlockState[][][] =
         Array.from({ length: sizeX }, () =>
             Array.from({ length: sizeY }, () =>
                 Array.from({ length: sizeZ }, () => ({ ...airState }))

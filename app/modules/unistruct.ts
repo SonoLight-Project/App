@@ -1,8 +1,8 @@
 // modules/unistruct.ts
 
 import type { IUniStructMeta, IUniBlock, IUniStruct, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
-import { parseLitematica, convertUniStructToLitematic } from '~/stores/litematic-parser';
-import type { ParsedLitematica } from '~/stores/litematic-parser';
+import { parseLitematica, convertUniStructToLitematic } from '~/plugins/litematic-parser';
+import type { IParsedLitematica, IBlockState } from '~/plugins/litematic-parser';
 import { gzip, ungzip } from 'pako';
 /**
 文件头   
@@ -189,7 +189,7 @@ export class Unistruct {
         return result;
     }
 
-    static fromLitematicaData(data: ParsedLitematica): Unistruct {
+    static fromLitematicaData(data: IParsedLitematica): Unistruct {
         const result = new Unistruct();
         result.data = {
             minecraftDataVersion: data.minecraftDataVersion,
@@ -215,12 +215,12 @@ export class Unistruct {
     /**
      * 元数据意义上保证 a === Unistruct.fromLitematicaData(a).toLitematicaData()  
      * 
-     * @returns {ParsedLitematica}
+     * @returns {IParsedLitematica}
      */
-    toLitematicaData(): ParsedLitematica {
+    toLitematicaData(): IParsedLitematica {
         const uniStruct = this.data;
 
-        const litematicaData: ParsedLitematica = {
+        const litematicaData: IParsedLitematica = {
             minecraftDataVersion: uniStruct.minecraftDataVersion,
             // Litematic 文件格式版本, 对于 1.13+ 通常是 6
             version: -6,
@@ -234,7 +234,7 @@ export class Unistruct {
                 const uniRegion = uniStruct.regions[regionName]!;
 
                 // 使用 Map 来高效地收集所有不重复的方块状态以生成调色板 (palette)
-                const uniqueBlocks = new Map<string, BlockState>();
+                const uniqueBlocks = new Map<string, IBlockState>();
 
                 // 遍历三维方块数组来填充 Map
                 for (let x = 0; x < Math.abs(uniRegion.size.x); x++) {
