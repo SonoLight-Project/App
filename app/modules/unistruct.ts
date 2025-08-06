@@ -1,6 +1,6 @@
 // modules/unistruct.ts
 
-import type { IUniStructMeta, IUniBlock, IUniStruct, IUniStructRaw, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
+import type { IUniStructMeta, IUniBlock, IUniStruct, IUniEntity, IUniTileEntity } from '~/types/unistruct/unistruct'
 import { parseLitematica, convertUniStructToLitematic } from '~/stores/litematic-parser';
 import type { ParsedLitematica } from '~/stores/litematic-parser';
 import { gzip, ungzip } from 'pako';
@@ -380,10 +380,9 @@ export class UniStructSerializer {
             const byteLength = Math.ceil(encodedData.length / 8);
             size += 4 + byteLength; // 位长度(uint32) + 数据
 
-            // --- 新增: 计算方块实体和实体的大小 ---
+            // 计算方块实体和实体的大小 ---
             size += this.calculateTileEntitiesSize(region.tileEntities);
             size += this.calculateEntitiesSize(region.entities);
-            // --- 结束新增 ---
         }
 
         return size;
@@ -487,7 +486,7 @@ export class UniStructSerializer {
             }
             const sizeZ = blocks[0]![0]!.length;
             
-            // *** 关键修复：按 Y -> Z -> X 或任何顺序遍历都行，但必须按 [x][y][z] 访问 ***
+            // 按 [x][y][z] 访问 ***
             for (let x = 0; x < sizeX; x++) {
                 for (let y = 0; y < sizeY; y++) {
                     for (let z = 0; z < sizeZ; z++) {
@@ -577,7 +576,7 @@ export class UniStructSerializer {
         const sizeZ = blocks[0]![0]!.length;
 
         try {
-            // *** 关键修复：按 Y -> Z -> X 顺序遍历，但按 [x][y][z] 顺序访问 ***
+            // 按 [x][y][z] 访问
             for (let y = 0; y < sizeY; y++) {
                 for (let z = 0; z < sizeZ; z++) {
                     for (let x = 0; x < sizeX; x++) {
@@ -1124,6 +1123,9 @@ export class UniStructDeserializer {
         return [node, newOffset];
     }
 
+    /**
+     * zhizhiwang: 重建的时候一定要先填左子树, 重构或者迁移的时候注意这个
+     */
     private static deserializeNode(
         view: DataView,
         offset: number,
