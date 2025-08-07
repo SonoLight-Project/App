@@ -35,7 +35,13 @@ export default defineNuxtConfig({
     //     viewTransition: true
     // },
 
-    modules: ["@nuxt/icon", "@pinia/nuxt", "pinia-plugin-persistedstate/nuxt", "@nuxt/content"],
+    modules: [
+        "@nuxt/icon",
+        "@pinia/nuxt",
+        "pinia-plugin-persistedstate/nuxt",
+        "@nuxt/content",
+        '@tresjs/nuxt',
+    ],
     css: ["~/assets/main.css"],
 
     // icon: {
@@ -49,5 +55,23 @@ export default defineNuxtConfig({
 
     vite: {
         plugins: [tailwindcss()],
+        define: {
+            'global': 'globalThis',
+        },
+        resolve: {
+            alias: {
+                buffer: 'buffer/',
+            },
+        },
+        build: {
+            rollupOptions: {
+                external: ['three'],
+            },
+        },
+    },
+
+    tres: {
+        
+        glsl: false,     
     },
 });

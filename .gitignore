@@ -25,3 +25,6 @@ logs
 
 # Vercel Build
 .vercel/*
+
+# vscode
+.vscode/*
