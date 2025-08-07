@@ -38,8 +38,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { parseLitematica } from '~/stores/litematic-parser'
-import type { ParsedLitematica } from '~/stores/litematic-parser'
+import { parseLitematica } from '~/plugins/litematic-parser'
+import type { IParsedLitematica } from '~/plugins/litematic-parser'
 import { Unistruct } from '~/modules/unistruct'
 import type { IUniStruct } from '~/types/unistruct/unistruct'
 
